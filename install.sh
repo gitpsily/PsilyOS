@@ -71,7 +71,10 @@ install_packages() {
         thunar yazi
 
         # Apps
-        neovim btop chromium
+        neovim btop chromium libreoffice-fresh discord
+
+        # Virtualization
+        libvirt qemu-full virt-viewer dnsmasq ebtables
 
         # Fonts
         ttf-jetbrains-mono-nerd otf-font-awesome
@@ -82,8 +85,8 @@ install_packages() {
         # System
         sddm qt5-graphicaleffects qt5-quickcontrols2
 
-        # Build deps
-        base-devel git
+        # Build deps + Node (for claude code)
+        base-devel git nodejs npm
     )
 
     # AUR packages
@@ -92,6 +95,9 @@ install_packages() {
         ghostty
         wallust
         wlogout
+        librewolf-bin
+        1password
+        plex-desktop
     )
 
     # Install official packages
@@ -205,6 +211,70 @@ fix_sddm_session() {
     fi
 }
 
+# ── Claude Code ──────────────────────────────
+install_claude_code() {
+    if ! command -v claude &>/dev/null; then
+        echo ""
+        echo ":: Installing Claude Code..."
+        sudo npm install -g @anthropic-ai/claude-code
+    fi
+}
+
+# ── Libvirt Setup ────────────────────────────
+setup_libvirt() {
+    echo ""
+    echo ":: Setting up libvirt..."
+    sudo usermod -aG libvirt "$USER" 2>/dev/null || true
+}
+
+# ── Wallpapers ───────────────────────────────
+download_wallpapers() {
+    local wall_dir="$HOME/Pictures/wallpapers"
+    if [ "$(ls -A "$wall_dir" 2>/dev/null)" ]; then
+        echo ""
+        echo ":: Wallpapers already present, skipping download."
+        return
+    fi
+
+    echo ""
+    echo ":: Downloading wallpapers..."
+
+    local urls=(
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=3840&q=90"
+        "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=3840&q=90"
+        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=3840&q=90"
+        "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=3840&q=90"
+        "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=3840&q=90"
+        "https://images.unsplash.com/photo-1518173946687-a1e6e3b40e35?w=3840&q=90"
+        "https://images.unsplash.com/photo-1465056836900-8f1e940c1f8a?w=3840&q=90"
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=3840&q=90"
+        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=3840&q=90"
+        "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=3840&q=90"
+    )
+
+    local names=(
+        "mountain-lake.jpg"
+        "forest-fog.jpg"
+        "forest-canopy.jpg"
+        "rolling-hills.jpg"
+        "waterfall.jpg"
+        "aurora.jpg"
+        "misty-forest.jpg"
+        "ocean-rocks.jpg"
+        "mountain-sunset.jpg"
+        "golden-field.jpg"
+    )
+
+    for i in "${!urls[@]}"; do
+        if [ ! -f "$wall_dir/${names[$i]}" ]; then
+            echo "   Downloading: ${names[$i]}"
+            curl -sL "${urls[$i]}" -o "$wall_dir/${names[$i]}" 2>/dev/null || true
+        fi
+    done
+
+    echo "   Done. $(ls "$wall_dir" | wc -l) wallpapers ready."
+}
+
 # ── Services ─────────────────────────────────
 enable_services() {
     echo ""
@@ -212,18 +282,22 @@ enable_services() {
     sudo systemctl enable sddm --force 2>/dev/null || true
     sudo systemctl enable NetworkManager 2>/dev/null || true
     sudo systemctl enable bluetooth 2>/dev/null || true
+    sudo systemctl enable libvirtd 2>/dev/null || true
 }
 
 # ── Run ──────────────────────────────────────
 main() {
     preflight
     install_packages
+    install_claude_code
     create_dirs
     symlink_configs
     set_permissions
     set_shell
+    setup_libvirt
     fix_sddm_session
     enable_services
+    download_wallpapers
 
     echo ""
     echo "  ╔══════════════════════════════════════╗"
