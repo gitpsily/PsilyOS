@@ -192,6 +192,37 @@ set_permissions() {
     chmod +x "$DOTFILES/scripts/"*.sh
 }
 
+# ── VM Detection + Tools ─────────────────────
+setup_vm() {
+    if systemd-detect-virt --quiet 2>/dev/null; then
+        local virt=$(systemd-detect-virt)
+        echo ""
+        echo ":: VM detected ($virt) — installing guest tools..."
+        case "$virt" in
+            vmware)
+                if ! pacman -Qi open-vm-tools &>/dev/null; then
+                    sudo pacman -S --needed --noconfirm open-vm-tools
+                fi
+                sudo systemctl enable vmtoolsd 2>/dev/null || true
+                sudo systemctl start vmtoolsd 2>/dev/null || true
+                ;;
+            kvm|qemu)
+                if ! pacman -Qi qemu-guest-agent &>/dev/null; then
+                    sudo pacman -S --needed --noconfirm qemu-guest-agent spice-vdagent
+                fi
+                sudo systemctl enable qemu-guest-agent 2>/dev/null || true
+                ;;
+            oracle)
+                if ! pacman -Qi virtualbox-guest-utils &>/dev/null; then
+                    sudo pacman -S --needed --noconfirm virtualbox-guest-utils
+                fi
+                sudo systemctl enable vboxservice 2>/dev/null || true
+                ;;
+        esac
+        echo "   Guest tools configured."
+    fi
+}
+
 # ── SMB Mount ────────────────────────────────
 setup_smb() {
     local envfile="$DOTFILES/.env"
@@ -349,6 +380,7 @@ main() {
     symlink_configs
     set_permissions
     set_shell
+    setup_vm
     setup_libvirt
     setup_smb
     fix_sddm_session
