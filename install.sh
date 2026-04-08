@@ -196,7 +196,7 @@ fix_sddm_session() {
     local session="/usr/share/wayland-sessions/hyprland.desktop"
     if [ -f "$session" ]; then
         if grep -q "Exec=Hyprland" "$session"; then
-            sudo sed -i 's|Exec=Hyprland|Exec=start-hyprland|' "$session"
+            sudo sed -i 's/Exec=Hyprland/Exec=start-hyprland/' "$session"
             echo "   Fixed: $session now uses start-hyprland"
         else
             echo "   Already using start-hyprland"
