@@ -66,6 +66,7 @@ install_packages() {
         grim slurp wl-clipboard cliphist
         brightnessctl playerctl jq bat
         network-manager-applet blueman
+        cifs-utils
 
         # File Manager
         thunar yazi
@@ -191,6 +192,55 @@ set_permissions() {
     chmod +x "$DOTFILES/scripts/"*.sh
 }
 
+# ── SMB Mount ────────────────────────────────
+setup_smb() {
+    local envfile="$DOTFILES/.env"
+    if [ ! -f "$envfile" ]; then
+        echo ""
+        echo ":: No .env file found — skipping SMB mount."
+        echo "   To enable, create $envfile with:"
+        echo "     SMB_IP=10.69.1.218"
+        echo "     SMB_SHARE=storage"
+        echo "     SMB_USER=your_user"
+        echo "     SMB_PASS=your_pass"
+        return
+    fi
+
+    source "$envfile"
+
+    if [ -z "${SMB_IP:-}" ] || [ -z "${SMB_SHARE:-}" ] || [ -z "${SMB_USER:-}" ] || [ -z "${SMB_PASS:-}" ]; then
+        echo ""
+        echo ":: .env missing SMB vars — skipping mount."
+        return
+    fi
+
+    echo ""
+    echo ":: Setting up SMB mount..."
+
+    local mountpoint="/mnt/${SMB_SHARE}"
+    local credfile="$HOME/.smbcredentials"
+
+    # Write credentials file (600 perms)
+    cat > "$credfile" << CRED
+username=${SMB_USER}
+password=${SMB_PASS}
+CRED
+    chmod 600 "$credfile"
+
+    # Create mount point
+    sudo mkdir -p "$mountpoint"
+
+    # Add to fstab if not already there
+    local fstab_entry="//${SMB_IP}/${SMB_SHARE} ${mountpoint} cifs credentials=${credfile},uid=$(id -u),gid=$(id -g),nofail,x-systemd.automount 0 0"
+    if ! grep -q "${SMB_IP}/${SMB_SHARE}" /etc/fstab 2>/dev/null; then
+        echo "$fstab_entry" | sudo tee -a /etc/fstab > /dev/null
+        echo "   Added to /etc/fstab"
+    fi
+
+    # Mount now
+    sudo mount "$mountpoint" 2>/dev/null && echo "   Mounted: $mountpoint" || echo "   Mount will be available after reboot"
+}
+
 # ── Directories ──────────────────────────────
 create_dirs() {
     echo ""
@@ -300,6 +350,7 @@ main() {
     set_permissions
     set_shell
     setup_libvirt
+    setup_smb
     fix_sddm_session
     enable_services
     download_wallpapers
