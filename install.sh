@@ -57,7 +57,7 @@ install_packages() {
     local official=(
         # Core Wayland + Hyprland
         hyprland hyprlock hypridle xdg-desktop-portal-hyprland
-        waybar mako swww wlogout
+        waybar mako swww
 
         # Terminal + Shell
         kitty zsh starship tmux
@@ -91,6 +91,7 @@ install_packages() {
         rofi-wayland
         ghostty
         wallust
+        wlogout
     )
 
     # Install official packages
