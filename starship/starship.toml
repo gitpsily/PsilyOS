@@ -1,18 +1,33 @@
 # ┌──────────────────────────────────────────┐
-# │  Starship Prompt               │
+# │  Starship Prompt                          │
 # └──────────────────────────────────────────┘
 
 format = """
+$username\
+$hostname\
 $directory\
 $git_branch\
 $git_status\
 $python\
 $nodejs\
 $rust\
+$golang\
+$lua\
+$java\
 $docker_context\
 $cmd_duration\
 $line_break\
 $character"""
+
+[username]
+show_always = true
+style_user = "bold cyan"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold bright-black"
+format = "[@$hostname]($style) "
 
 [character]
 success_symbol = "[>](bold blue)"
@@ -39,7 +54,7 @@ style = "bright-black"
 format = "[$duration]($style) "
 
 [python]
-format = '[${symbol}${pyenv_prefix}(${version} )]($style)'
+format = '[${symbol}(${version} )]($style)'
 symbol = " "
 style = "yellow"
 
@@ -49,6 +64,21 @@ symbol = " "
 style = "green"
 
 [rust]
+format = "[$symbol($version )]($style)"
+symbol = " "
+style = "red"
+
+[golang]
+format = "[$symbol($version )]($style)"
+symbol = " "
+style = "cyan"
+
+[lua]
+format = "[$symbol($version )]($style)"
+symbol = " "
+style = "blue"
+
+[java]
 format = "[$symbol($version )]($style)"
 symbol = " "
 style = "red"
