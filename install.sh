@@ -66,7 +66,7 @@ install_packages() {
         grim slurp wl-clipboard cliphist
         brightnessctl playerctl jq bat
         network-manager-applet blueman
-        cifs-utils
+        cifs-utils nwg-displays
 
         # File Manager
         thunar yazi
