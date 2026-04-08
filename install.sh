@@ -77,6 +77,9 @@ install_packages() {
         # Virtualization
         libvirt qemu-full virt-viewer dnsmasq ebtables
 
+        # Hardware monitoring + cooling
+        lm_sensors liquidctl
+
         # Fonts
         ttf-jetbrains-mono-nerd otf-font-awesome
 
@@ -85,6 +88,7 @@ install_packages() {
 
         # System
         sddm qt5-graphicaleffects qt5-quickcontrols2
+        wlr-randr
 
         # Build deps + Node (for claude code)
         base-devel git nodejs npm
@@ -190,6 +194,160 @@ set_permissions() {
     echo ""
     echo ":: Setting permissions..."
     chmod +x "$DOTFILES/scripts/"*.sh
+}
+
+# ── NVIDIA Setup (bare metal only) ───────────
+setup_nvidia() {
+    if systemd-detect-virt --quiet 2>/dev/null; then
+        return  # Skip in VMs
+    fi
+
+    if ! lspci | grep -qi nvidia; then
+        return  # No NVIDIA GPU
+    fi
+
+    echo ""
+    echo ":: NVIDIA GPU detected — configuring..."
+
+    # Install drivers
+    local nvidia_pkgs=(nvidia nvidia-utils nvidia-settings lib32-nvidia-utils)
+    for pkg in "${nvidia_pkgs[@]}"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || true
+        fi
+    done
+
+    # Hyprland NVIDIA env vars
+    local nvidia_conf="$DOTFILES/hypr/nvidia.conf"
+    cat > "$nvidia_conf" << 'NVCONF'
+# ┌──────────────────────────────────────────┐
+# │  NVIDIA Configuration                    │
+# │  Auto-generated for bare metal NVIDIA    │
+# └──────────────────────────────────────────┘
+
+env = LIBVA_DRIVER_NAME,nvidia
+env = XDG_SESSION_TYPE,wayland
+env = GBM_BACKEND,nvidia-drm
+env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+env = NVD_BACKEND,direct
+
+cursor {
+    no_hardware_cursors = true
+}
+NVCONF
+
+    # Source nvidia.conf from hyprland.conf if not already
+    if ! grep -q "nvidia.conf" "$DOTFILES/hypr/hyprland.conf"; then
+        sed -i '/source = .\/autostart.conf/a source = ./nvidia.conf' "$DOTFILES/hypr/hyprland.conf"
+    fi
+
+    # Add nvidia modules to mkinitcpio
+    if ! grep -q "nvidia" /etc/mkinitcpio.conf 2>/dev/null; then
+        sudo sed -i 's/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/' /etc/mkinitcpio.conf
+        sudo mkinitcpio -P
+    fi
+
+    echo "   NVIDIA configured."
+}
+
+# ── Cooling Profiles ────────────────────────
+setup_cooling() {
+    if systemd-detect-virt --quiet 2>/dev/null; then
+        return  # Skip in VMs
+    fi
+
+    echo ""
+    echo ":: Setting up cooling profiles..."
+
+    # Create cooling script
+    local cool_script="$DOTFILES/scripts/cooling.sh"
+    cat > "$cool_script" << 'COOLEOF'
+#!/usr/bin/env bash
+# ┌──────────────────────────────────────────┐
+# │  Cooling Profile — Aggressive            │
+# │  Run at boot or manually                 │
+# └──────────────────────────────────────────┘
+
+# ── AIO Pump + Fans (liquidctl) ──────────────
+# Detect and configure AIO cooler
+if command -v liquidctl &>/dev/null; then
+    # Initialize all devices
+    liquidctl initialize --match ""  2>/dev/null
+
+    # Aggressive pump profile — ramp up early
+    liquidctl set pump speed \
+        20 60 \
+        30 70 \
+        35 80 \
+        40 90 \
+        45 100 \
+        2>/dev/null || true
+
+    # Aggressive fan profile — keep it cool
+    liquidctl set fan speed \
+        20 50 \
+        25 60 \
+        30 70 \
+        35 80 \
+        40 90 \
+        45 100 \
+        2>/dev/null || true
+
+    echo "AIO: Aggressive profile set"
+else
+    echo "liquidctl not found — skipping AIO"
+fi
+
+# ── NVIDIA GPU Fan (if available) ────────────
+if command -v nvidia-settings &>/dev/null; then
+    # Enable manual fan control
+    nvidia-settings -a "[gpu:0]/GPUFanControlState=1" 2>/dev/null || true
+
+    # Aggressive GPU fan curve via nvidia-settings
+    # Set to 80% minimum — adjust after testing
+    nvidia-settings -a "[fan:0]/GPUTargetFanSpeed=80" 2>/dev/null || true
+
+    echo "GPU: Fan set to 80% (manual mode)"
+fi
+
+echo "Cooling profile applied."
+COOLEOF
+    chmod +x "$cool_script"
+
+    # Create systemd service for boot
+    sudo tee /etc/systemd/system/psilyos-cooling.service > /dev/null << 'SVCEOF'
+[Unit]
+Description=PsilyOS Cooling Profile
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/%i/.config/scripts/cooling.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+    # Use a user-specific service instead
+    mkdir -p "$HOME/.config/systemd/user"
+    cat > "$HOME/.config/systemd/user/cooling.service" << USVCEOF
+[Unit]
+Description=PsilyOS Cooling Profile
+
+[Service]
+Type=oneshot
+ExecStart=$DOTFILES/scripts/cooling.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target
+USVCEOF
+
+    systemctl --user daemon-reload
+    systemctl --user enable cooling.service 2>/dev/null || true
+
+    echo "   Cooling service installed (user systemd)."
 }
 
 # ── VM Detection + Tools ─────────────────────
@@ -380,6 +538,8 @@ main() {
     symlink_configs
     set_permissions
     set_shell
+    setup_nvidia
+    setup_cooling
     setup_vm
     setup_libvirt
     setup_smb

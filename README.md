@@ -233,15 +233,27 @@ PsilyOS sets up a handful of useful aliases in `.zshrc`:
 | `update`  | `sudo pacman -Syu`                    |
 | `cleanup` | Remove orphan packages + clear cache  |
 
+## Hardware Support
+
+The installer auto-detects your environment and configures accordingly:
+
+**NVIDIA GPU:** Auto-detected on bare metal. Installs drivers, sets Hyprland env vars (`GBM_BACKEND`, `__GLX_VENDOR_LIBRARY_NAME`, etc.), adds kernel modules to mkinitcpio. Creates `hypr/nvidia.conf` which is sourced automatically.
+
+**AIO Cooler (liquidctl):** Aggressive pump and fan profiles applied at boot via a user systemd service. Pump ramps to 100% at 45C, fans follow similarly. Adjust curves in `scripts/cooling.sh`.
+
+**GPU Fan:** Set to 80% manual mode on NVIDIA GPUs. Tune in `scripts/cooling.sh`.
+
+**VM Detection:** Auto-installs guest tools for VMware, KVM/QEMU, and VirtualBox. Skips all hardware configs (NVIDIA, cooling) when running in a VM.
+
 ## Notes
 
-**VM Testing:** Works out of the box in VMware with a base Arch install. Clone and run the installer — that's it.
-
-**NVIDIA (Baremetal):** When moving to bare metal with NVIDIA, you'll need the appropriate drivers and Hyprland environment variables. That's a separate config layer — PsilyOS keeps the base clean so hardware-specific tweaks don't pollute the main configs.
+**VM Testing:** Works out of the box in VMware with a base Arch install. Auto-detects VM and installs guest tools.
 
 **Fonts:** JetBrainsMono Nerd Font everywhere. The installer handles it.
 
-**Wallpapers:** Drop images into `~/Pictures/wallpapers/` — jpg, png, or webp. The wallpaper picker uses Rofi so you'll see filenames. Name them something meaningful.
+**Wallpapers:** 10 nature photos downloaded on first install. Drop more into `~/Pictures/wallpapers/` — jpg, png, or webp. `Super+Shift+W` picks one and themes the entire desktop.
+
+**SMB/NAS Mount:** Create a `.env` file (see `.env.example`) with your NAS credentials. The installer auto-mounts and adds an fstab entry.
 
 ## License
 
