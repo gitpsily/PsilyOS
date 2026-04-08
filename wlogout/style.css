@@ -1,0 +1,51 @@
+/* ┌──────────────────────────────────────────┐ */
+/* │  wlogout Stylesheet            │ */
+/* └──────────────────────────────────────────┘ */
+
+window {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 14px;
+  color: #c0caf5;
+  background-color: rgba(26, 27, 38, 0.85);
+}
+
+button {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 25%;
+  background-color: transparent;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  margin: 10px;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: rgba(36, 40, 59, 0.8);
+  border-color: #7aa2f7;
+}
+
+button:focus {
+  background-color: rgba(36, 40, 59, 0.8);
+  border-color: #7aa2f7;
+}
+
+#lock {
+  background-image: image(url("/usr/share/wlogout/icons/lock.png"));
+}
+
+#logout {
+  background-image: image(url("/usr/share/wlogout/icons/logout.png"));
+}
+
+#suspend {
+  background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
+}
+
+#reboot {
+  background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
+}
+
+#shutdown {
+  background-image: image(url("/usr/share/wlogout/icons/shutdown.png"));
+}

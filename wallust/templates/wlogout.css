@@ -1,0 +1,53 @@
+/* ┌──────────────────────────────────────────┐ */
+/* │  wlogout (wallust generated)   │ */
+/* │  DO NOT EDIT — edit the template at      │ */
+/* │  wallust/templates/wlogout.css           │ */
+/* └──────────────────────────────────────────┘ */
+
+window {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 14px;
+    color: {{foreground}};
+    background-color: rgba({{background | red}}, {{background | green}}, {{background | blue}}, 0.85);
+}
+
+button {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 25%;
+    background-color: transparent;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    margin: 10px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: {{color0}};
+    border-color: {{color4}};
+}
+
+button:focus {
+    background-color: {{color0}};
+    border-color: {{color4}};
+}
+
+#lock {
+    background-image: image(url("/usr/share/wlogout/icons/lock.png"));
+}
+
+#logout {
+    background-image: image(url("/usr/share/wlogout/icons/logout.png"));
+}
+
+#suspend {
+    background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
+}
+
+#reboot {
+    background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
+}
+
+#shutdown {
+    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"));
+}

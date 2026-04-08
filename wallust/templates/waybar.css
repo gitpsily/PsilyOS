@@ -1,0 +1,82 @@
+/* ┌──────────────────────────────────────────┐ */
+/* │  Waybar (wallust generated)    │ */
+/* │  DO NOT EDIT — edit the template at      │ */
+/* │  wallust/templates/waybar.css            │ */
+/* └──────────────────────────────────────────┘ */
+
+@define-color bg      {{background}};
+@define-color fg      {{foreground}};
+@define-color accent  {{color4}};
+@define-color accent2 {{color5}};
+@define-color surface {{color0}};
+@define-color overlay {{color8}};
+@define-color subtle  {{color7}};
+@define-color muted   {{color8}};
+@define-color warn    {{color3}};
+@define-color err     {{color1}};
+
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: alpha(@bg, 0.85);
+    color: @fg;
+    border-bottom: 2px solid alpha(@accent, 0.3);
+}
+
+#workspaces button {
+    padding: 0 6px;
+    color: @subtle;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+#workspaces button.active {
+    color: @accent;
+}
+
+#workspaces button.urgent {
+    color: @err;
+}
+
+#window {
+    padding: 0 12px;
+    color: @subtle;
+}
+
+#clock {
+    font-weight: bold;
+    color: @fg;
+}
+
+#pulseaudio,
+#network,
+#bluetooth,
+#battery,
+#tray {
+    padding: 0 8px;
+    color: @fg;
+}
+
+#battery.warning {
+    color: @warn;
+}
+
+#battery.critical {
+    color: @err;
+}
+
+#custom-power {
+    padding: 0 10px;
+    color: @accent;
+}
+
+tooltip {
+    background: @surface;
+    border: 1px solid @overlay;
+    border-radius: 6px;
+}
