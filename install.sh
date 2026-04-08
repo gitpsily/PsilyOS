@@ -100,33 +100,37 @@ install_packages() {
         plex-desktop
     )
 
-    # Install official packages
-    local to_install=()
+    # Install official packages (one at a time to survive failures)
+    local installed=0
+    local failed=()
     for pkg in "${official[@]}"; do
         if ! pacman -Qi "$pkg" &>/dev/null; then
-            to_install+=("$pkg")
+            if sudo pacman -S --needed --noconfirm "$pkg" &>/dev/null; then
+                ((installed++))
+            else
+                failed+=("$pkg")
+            fi
         fi
     done
 
-    if [ ${#to_install[@]} -gt 0 ]; then
-        echo "   Official: ${to_install[*]}"
-        sudo pacman -S --needed --noconfirm "${to_install[@]}"
-    fi
-
-    # Install AUR packages
-    local aur_install=()
+    # Install AUR packages (one at a time)
     for pkg in "${aur[@]}"; do
         if ! pacman -Qi "$pkg" &>/dev/null; then
-            aur_install+=("$pkg")
+            if "$AUR_HELPER" -S --needed --noconfirm "$pkg" &>/dev/null; then
+                ((installed++))
+            else
+                failed+=("$pkg")
+            fi
         fi
     done
 
-    if [ ${#aur_install[@]} -gt 0 ]; then
-        echo "   AUR: ${aur_install[*]}"
-        "$AUR_HELPER" -S --needed --noconfirm "${aur_install[@]}"
+    if [ ${#failed[@]} -gt 0 ]; then
+        echo "   Installed $installed packages."
+        echo "   Failed: ${failed[*]}"
+        echo "   (You can install failed packages manually later)"
+    else
+        echo "   All packages installed. ($installed new)"
     fi
-
-    echo "   All packages installed."
 }
 
 # ── Symlink Configs ──────────────────────────
