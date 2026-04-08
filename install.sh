@@ -149,6 +149,7 @@ symlink_configs() {
     link_config "$DOTFILES/rofi"      "$CONFIG/rofi"
     link_config "$DOTFILES/mako"      "$CONFIG/mako"
     link_config "$DOTFILES/ghostty"   "$CONFIG/ghostty"
+    link_config "$DOTFILES/foot"      "$CONFIG/foot"
     link_config "$DOTFILES/tmux"      "$CONFIG/tmux"
     link_config "$DOTFILES/wallust"   "$CONFIG/wallust"
     link_config "$DOTFILES/wlogout"   "$CONFIG/wlogout"
