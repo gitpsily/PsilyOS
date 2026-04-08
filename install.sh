@@ -189,6 +189,21 @@ create_dirs() {
     mkdir -p "$HOME/.cache/psilyos"
 }
 
+# ── Fix SDDM Session ─────────────────────────
+fix_sddm_session() {
+    echo ""
+    echo ":: Fixing Hyprland SDDM session..."
+    local session="/usr/share/wayland-sessions/hyprland.desktop"
+    if [ -f "$session" ]; then
+        if grep -q "Exec=Hyprland" "$session"; then
+            sudo sed -i 's|Exec=Hyprland|Exec=start-hyprland|' "$session"
+            echo "   Fixed: $session now uses start-hyprland"
+        else
+            echo "   Already using start-hyprland"
+        fi
+    fi
+}
+
 # ── Services ─────────────────────────────────
 enable_services() {
     echo ""
@@ -206,6 +221,7 @@ main() {
     symlink_configs
     set_permissions
     set_shell
+    fix_sddm_session
     enable_services
 
     echo ""
