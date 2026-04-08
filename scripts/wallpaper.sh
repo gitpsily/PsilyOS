@@ -19,7 +19,7 @@ set_wallpaper() {
     local wall="$1"
 
     # Set wallpaper with transition
-    swww img "$wall" \
+    awww img "$wall" \
         --transition-type grow \
         --transition-duration 1.5 \
         --transition-fps 60

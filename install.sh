@@ -57,7 +57,7 @@ install_packages() {
     local official=(
         # Core Wayland + Hyprland
         hyprland hyprlock hypridle xdg-desktop-portal-hyprland
-        waybar mako swww
+        waybar mako awww
 
         # Terminal + Shell
         foot kitty zsh starship tmux
@@ -194,6 +194,7 @@ create_dirs() {
     mkdir -p "$HOME/Pictures/wallpapers"
     mkdir -p "$HOME/Pictures/screenshots"
     mkdir -p "$HOME/.cache/psilyos"
+    mkdir -p "$HOME/.cache/awww"
 }
 
 # ── Fix SDDM Session ─────────────────────────

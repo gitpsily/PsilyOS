@@ -55,6 +55,10 @@ alias cleanup='sudo pacman -Rns $(pacman -Qdtq) 2>/dev/null; sudo paccache -r'
 alias wall='~/.config/scripts/wallpaper.sh'
 alias shot='~/.config/scripts/screenshot.sh'
 
+# Disable autocorrect for commands zsh gets wrong
+alias awww='nocorrect awww'
+alias awww-daemon='nocorrect awww-daemon'
+
 # ── Path ─────────────────────────────────────
 export PATH="$HOME/.local/bin:$PATH"
 
