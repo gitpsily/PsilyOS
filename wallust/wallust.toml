@@ -1,48 +1,18 @@
 # ┌──────────────────────────────────────────┐
-# │  Wallust Configuration         │
+# │  Wallust Configuration (v3)              │
 # │  Dynamic color generation from wallpaper │
 # └──────────────────────────────────────────┘
 
-# Backend for color extraction
 backend = "kmeans"
-
-# Color space for palette generation
 color_space = "labmixed"
-
-# Number of iterations for kmeans
 threshold = 20
 
-# ── Template Definitions ─────────────────────
-# Each template generates a config from wallpaper colors
-
-[[entry]]
-template = "hyprland.conf"
-target = "~/.config/hypr/theme.conf"
-
-[[entry]]
-template = "waybar.css"
-target = "~/.config/waybar/style.css"
-
-[[entry]]
-template = "mako.conf"
-target = "~/.config/mako/config"
-
-[[entry]]
-template = "rofi.rasi"
-target = "~/.config/rofi/theme.rasi"
-
-[[entry]]
-template = "ghostty.conf"
-target = "~/.config/ghostty/config"
-
-[[entry]]
-template = "hyprlock.conf"
-target = "~/.config/hypr/hyprlock.conf"
-
-[[entry]]
-template = "tmux.conf"
-target = "~/.config/tmux/tmux.conf"
-
-[[entry]]
-template = "wlogout.css"
-target = "~/.config/wlogout/style.css"
+[templates]
+hyprland = { template = "hyprland.conf", target = "~/.config/hypr/theme.conf" }
+waybar   = { template = "waybar.css",    target = "~/.config/waybar/style.css" }
+mako     = { template = "mako.conf",     target = "~/.config/mako/config" }
+rofi     = { template = "rofi.rasi",     target = "~/.config/rofi/theme.rasi" }
+ghostty  = { template = "ghostty.conf",  target = "~/.config/ghostty/config" }
+hyprlock = { template = "hyprlock.conf", target = "~/.config/hypr/hyprlock.conf" }
+tmux     = { template = "tmux.conf",     target = "~/.config/tmux/tmux.conf" }
+wlogout  = { template = "wlogout.css",   target = "~/.config/wlogout/style.css" }
