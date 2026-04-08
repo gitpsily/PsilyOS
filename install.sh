@@ -60,7 +60,7 @@ install_packages() {
         waybar mako swww
 
         # Terminal + Shell
-        kitty zsh starship tmux
+        foot kitty zsh starship tmux
 
         # Utilities
         grim slurp wl-clipboard cliphist
