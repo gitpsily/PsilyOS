@@ -383,9 +383,13 @@ setup_vm() {
         esac
 
         # Set VM renderer env vars in /etc/environment (read by PAM before any session)
-        if ! grep -q "WLR_NO_HARDWARE_CURSORS" /etc/environment 2>/dev/null; then
-            echo 'WLR_NO_HARDWARE_CURSORS=1' | sudo tee -a /etc/environment > /dev/null
-            echo 'WLR_RENDERER_ALLOW_SOFTWARE=1' | sudo tee -a /etc/environment > /dev/null
+        sudo touch /etc/environment
+        if ! grep -q "WLR_NO_HARDWARE_CURSORS" /etc/environment; then
+            echo 'WLR_NO_HARDWARE_CURSORS=1' | sudo tee -a /etc/environment
+            echo 'WLR_RENDERER_ALLOW_SOFTWARE=1' | sudo tee -a /etc/environment
+            echo "   Added WLR env vars to /etc/environment"
+        else
+            echo "   WLR env vars already in /etc/environment"
         fi
 
         echo "   Guest tools configured."
