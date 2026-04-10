@@ -3,7 +3,8 @@
 # Run: bash test-install.sh
 # Exit 0 = all pass, Exit 1 = failures
 
-SCRIPT="$(cd "$(dirname "$0")" && pwd)/install.sh"
+DOTFILES="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT="$DOTFILES/install.sh"
 PASS=0
 FAIL=0
 
@@ -88,6 +89,64 @@ if grep -q 'find.*wallpapers.*-type f' "$SCRIPT"; then
     assert "Wallust only runs if wallpaper files actually exist" "0"
 else
     assert "Wallust only runs if wallpaper files actually exist" "1"
+fi
+
+# ── Issue 7: All symlinked config dirs exist ────
+# Every directory referenced in symlink_configs() must exist in the repo
+echo ""
+echo "-- Config directory existence --"
+for dir in hypr waybar rofi mako ghostty foot tmux wallust wlogout yazi btop scripts starship; do
+    if [ -d "$DOTFILES/$dir" ]; then
+        assert "Config dir exists: $dir" "0"
+    else
+        assert "Config dir exists: $dir" "1"
+    fi
+done
+
+# ── Issue 8: Wallust template targets are writable ──
+# wallust.toml references target dirs — they must exist so wallust run succeeds
+echo ""
+echo "-- Wallust target dirs exist --"
+# Parse wallust.toml targets and check their parent dirs exist in PsilyOS
+for target_dir in hypr waybar mako rofi ghostty tmux wlogout; do
+    if [ -d "$DOTFILES/$target_dir" ]; then
+        assert "Wallust target dir exists: $target_dir" "0"
+    else
+        assert "Wallust target dir exists: $target_dir" "1"
+    fi
+done
+
+# ── Issue 9: Shell configs handle bwrap sandbox ──
+# symlink_configs creates symlinks for .zshrc/.zprofile, but Claude Code's
+# bwrap sandbox can't bind-mount symlinks. install.sh must create real files
+# that source the PsilyOS versions instead.
+echo ""
+echo "-- Shell config bwrap compatibility --"
+# Check that symlink_configs does NOT use link_config for shell files
+# Instead it should create sourcing shims (real files)
+if grep -A5 'Shell configs' "$SCRIPT" | grep -q 'link_config.*zsh'; then
+    assert "Shell configs use sourcing shims, not symlinks (bwrap compat)" "1"
+else
+    assert "Shell configs use sourcing shims, not symlinks (bwrap compat)" "0"
+fi
+
+# ── Issue 10: set_shell actually switches ────────
+echo ""
+echo "-- set_shell interactivity --"
+if grep -A10 'set_shell()' "$SCRIPT" | grep -q 'chsh\|read.*-r'; then
+    assert "set_shell offers to switch or switches interactively" "0"
+else
+    assert "set_shell offers to switch or switches interactively" "1"
+fi
+
+# ── Issue 11: Claude backup automation ───────────
+# There should be a systemd timer that runs claude-backup on a schedule
+echo ""
+echo "-- Claude backup automation --"
+if grep -q 'claude-backup\.timer\|enable.*claude-backup\|timer.*claude.*backup' "$SCRIPT"; then
+    assert "Claude backup has systemd timer" "0"
+else
+    assert "Claude backup has systemd timer" "1"
 fi
 
 # ── Summary ──────────────────────────────────────

@@ -203,8 +203,17 @@ symlink_configs() {
     link_config "$DOTFILES/starship/starship.toml" "$CONFIG/starship.toml"
 
     # Shell configs live in $HOME
-    link_config "$DOTFILES/zsh/.zshrc"    "$HOME/.zshrc"
-    link_config "$DOTFILES/zsh/.zprofile" "$HOME/.zprofile"
+    # NOTE: symlinks break Claude Code's bwrap sandbox — create real files
+    # that source the PsilyOS versions instead
+    for rcfile in .zshrc .zprofile; do
+        if [ -L "$HOME/$rcfile" ]; then
+            rm "$HOME/$rcfile"
+        elif [ -e "$HOME/$rcfile" ] && [ ! -L "$HOME/$rcfile" ]; then
+            mv "$HOME/$rcfile" "$HOME/${rcfile}.bak"
+        fi
+        echo "[[ -f \"$DOTFILES/zsh/$rcfile\" ]] && source \"$DOTFILES/zsh/$rcfile\"" > "$HOME/$rcfile"
+        echo "   Created: $HOME/$rcfile (sourcing shim)"
+    done
 
     # Clean up stale source lines from previous installs
     sed -i '/vm.conf/d' "$DOTFILES/hypr/hyprland.conf" 2>/dev/null || true
@@ -792,6 +801,50 @@ download_wallpapers() {
     echo "   Done. $(ls "$wall_dir" | wc -l) wallpapers ready."
 }
 
+# ── Claude Backup Timer ─────────────────────
+setup_claude_backup() {
+    local backup_script="$HOME/.config/scripts/claude-backup.sh"
+    if [ ! -f "$backup_script" ]; then
+        echo ""
+        echo ":: No claude-backup.sh found — skipping backup timer."
+        return
+    fi
+
+    echo ""
+    echo ":: Setting up Claude backup timer..."
+
+    mkdir -p "$HOME/.config/systemd/user"
+
+    cat > "$HOME/.config/systemd/user/claude-backup.service" << BSVCEOF
+[Unit]
+Description=Claude Code environment backup
+
+[Service]
+Type=oneshot
+ExecStart=$backup_script
+Environment=CLAUDE_BACKUP_DIR=%h
+BSVCEOF
+
+    cat > "$HOME/.config/systemd/user/claude-backup.timer" << BTMREOF
+[Unit]
+Description=Daily Claude Code backup
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target
+BTMREOF
+
+    systemctl --user daemon-reload
+    systemctl --user enable claude-backup.timer 2>/dev/null || true
+    systemctl --user start claude-backup.timer 2>/dev/null || true
+
+    echo "   claude-backup.timer enabled (daily)"
+}
+
 # ── Services ─────────────────────────────────
 enable_services() {
     echo ""
@@ -831,6 +884,7 @@ main() {
     setup_vm
     setup_smb
     restore_claude
+    setup_claude_backup
     setup_libvirt
     fix_sddm_session
     enable_services
