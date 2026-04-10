@@ -187,11 +187,10 @@ symlink_configs() {
 
 # ── Set Default Shell ────────────────────────
 set_shell() {
-    if [ "$SHELL" != "$(which zsh)" ]; then
-        echo ""
-        echo ":: Setting zsh as default shell..."
-        chsh -s "$(which zsh)"
-    fi
+    echo ""
+    echo ":: Shell: zsh is installed but NOT set as default."
+    echo "   To switch: chsh -s \$(which zsh)"
+    echo "   Test first: zsh (type 'exit' to return to bash)"
 }
 
 # ── Permissions ──────────────────────────────
