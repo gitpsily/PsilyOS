@@ -18,4 +18,5 @@ rofi     = { template = "rofi.rasi",     target = "~/.config/rofi/theme.rasi" }
 ghostty  = { template = "ghostty.conf",  target = "~/.config/ghostty/config" }
 hyprlock = { template = "hyprlock.conf", target = "~/.config/hypr/hyprlock.conf" }
 tmux     = { template = "tmux.conf",     target = "~/.config/tmux/tmux.conf" }
+foot     = { template = "foot.ini",      target = "~/.config/foot/foot.ini" }
 wlogout  = { template = "wlogout.css",   target = "~/.config/wlogout/style.css" }

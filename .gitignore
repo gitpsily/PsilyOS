@@ -16,6 +16,7 @@ hypr/hyprlock.conf
 waybar/style.css
 rofi/theme.rasi
 mako/config
+foot/foot.ini
 ghostty/config
 tmux/tmux.conf
 wlogout/style.css
