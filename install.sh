@@ -381,7 +381,22 @@ setup_vm() {
                 sudo systemctl enable vboxservice 2>/dev/null || true
                 ;;
         esac
+
+        # Create VM-specific Hyprland env vars
+        local vm_conf="$DOTFILES/hypr/vm.conf"
+        cat > "$vm_conf" << 'VMCONF'
+# VM-specific settings (auto-generated)
+env = WLR_NO_HARDWARE_CURSORS,1
+env = WLR_RENDERER_ALLOW_SOFTWARE,1
+VMCONF
+
+        # Source vm.conf from hyprland.conf if not already
+        if ! grep -q "vm.conf" "$DOTFILES/hypr/hyprland.conf"; then
+            sed -i '/source = .\/autostart.conf/a source = ./vm.conf' "$DOTFILES/hypr/hyprland.conf"
+        fi
+
         echo "   Guest tools configured."
+        echo "   VM renderer env vars set."
     fi
 }
 
