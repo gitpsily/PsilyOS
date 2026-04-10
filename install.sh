@@ -94,6 +94,9 @@ install_packages() {
         # Hardware monitoring + cooling
         lm_sensors liquidctl
 
+        # Sandbox deps (Claude Code)
+        bubblewrap socat
+
         # Fonts
         ttf-jetbrains-mono-nerd otf-font-awesome
 
@@ -268,9 +271,16 @@ NVCONF
         sed -i '/source = .\/autostart.conf/a source = ./nvidia.conf' "$DOTFILES/hypr/hyprland.conf"
     fi
 
-    # Add nvidia modules to mkinitcpio
+    # Add nvidia modules to mkinitcpio (handles both empty and pre-existing MODULES)
     if ! grep -q "nvidia" /etc/mkinitcpio.conf 2>/dev/null; then
-        sudo sed -i 's/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/' /etc/mkinitcpio.conf
+        local nvidia_mods="nvidia nvidia_modeset nvidia_uvm nvidia_drm"
+        if grep -q 'MODULES=()' /etc/mkinitcpio.conf 2>/dev/null; then
+            # Empty MODULES — replace directly
+            sudo sed -i "s/MODULES=()/MODULES=($nvidia_mods)/" /etc/mkinitcpio.conf
+        else
+            # Pre-existing modules — append inside the parens
+            sudo sed -i "s/MODULES=(\(.*\))/MODULES=(\1 $nvidia_mods)/" /etc/mkinitcpio.conf
+        fi
         sudo mkinitcpio -P
     fi
 
@@ -341,22 +351,7 @@ echo "Cooling profile applied."
 COOLEOF
     chmod +x "$cool_script"
 
-    # Create systemd service for boot
-    sudo tee /etc/systemd/system/psilyos-cooling.service > /dev/null << 'SVCEOF'
-[Unit]
-Description=PsilyOS Cooling Profile
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/home/%i/.config/scripts/cooling.sh
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-SVCEOF
-
-    # Use a user-specific service instead
+    # User-level systemd service (no root required)
     mkdir -p "$HOME/.config/systemd/user"
     cat > "$HOME/.config/systemd/user/cooling.service" << USVCEOF
 [Unit]
@@ -554,10 +549,12 @@ restore_claude() {
             sed -i "s|/home/${backup_user}|$HOME|g" "$HOME/.claude/settings.json"
             echo "   Fixed paths in settings.json"
         fi
-        if [ -f "$HOME/.claude/.mcp.json" ] && [ "$backup_user" != "$(whoami)" ]; then
-            sed -i "s|/home/${backup_user}|$HOME|g" "$HOME/.claude/.mcp.json"
-            echo "   Fixed paths in .mcp.json"
+        if [ -f "$HOME/.claude.json" ] && [ "$backup_user" != "$(whoami)" ]; then
+            sed -i "s|/home/${backup_user}|$HOME|g" "$HOME/.claude.json"
+            echo "   Fixed paths in .claude.json"
         fi
+        # Clean up stale .mcp.json from old backups (Claude Code doesn't read it)
+        rm -f "$HOME/.claude/.mcp.json" 2>/dev/null
 
         rm -rf "$tmpdir"
     else
@@ -590,60 +587,129 @@ restore_claude() {
         (cd "$HOME/.claude/memory-compiler" && "$HOME/.local/bin/uv" sync 2>/dev/null || true)
     fi
 
-    # 4. Wire .mcp.json — Overseer MCP server (absolute paths, no shell expansion)
-    cat > "$HOME/.claude/.mcp.json" << MCPEOF
-{
-  "mcpServers": {
-    "overseer": {
-      "command": "$HOME/.local/share/overseer-venv/bin/python3",
-      "args": ["$HOME/overseer/mcp-chromadb/server.py"]
-    }
-  }
-}
-MCPEOF
-    echo "   Wired .mcp.json (Overseer MCP server)"
+    # 4. Wire Overseer MCP server via claude mcp add (user scope)
+    # NOTE: ~/.claude/.mcp.json is NOT read by Claude Code — must use claude mcp add
+    if command -v claude &>/dev/null; then
+        claude mcp remove overseer -s user 2>/dev/null || true
+        claude mcp add -s user overseer -- "$HOME/.local/share/overseer-venv/bin/python3" "$HOME/overseer/mcp-chromadb/server.py" 2>/dev/null
+        echo "   Wired Overseer MCP server (claude mcp add -s user)"
+    else
+        echo "   WARNING: claude CLI not available — add Overseer MCP manually after install:"
+        echo "   claude mcp add -s user overseer -- $HOME/.local/share/overseer-venv/bin/python3 $HOME/overseer/mcp-chromadb/server.py"
+    fi
+    # Clean up stale .mcp.json if it exists (was never read by Claude Code)
+    rm -f "$HOME/.claude/.mcp.json" 2>/dev/null
 
     # 5. Ensure SessionStart hook exists in settings.json
     if [ -f "$HOME/.claude/settings.json" ]; then
         if ! grep -q "SessionStart" "$HOME/.claude/settings.json"; then
-            # Insert SessionStart hook before the Stop hook
-            local hook_cmd="cd \$HOME/.claude/memory-compiler && \$HOME/.claude/memory-compiler/.venv/bin/python hooks/session-start.py"
+            local hook_cmd="python3 \$HOME/.claude/memory-compiler/hooks/session-start.py"
             python3 -c "
 import json
 with open('$HOME/.claude/settings.json') as f:
     cfg = json.load(f)
 hooks = cfg.setdefault('hooks', {})
-hooks['SessionStart'] = [{'hooks': [{'type': 'command', 'command': '$hook_cmd', 'timeout': 10}]}]
+hooks['SessionStart'] = [{'hooks': [{'type': 'command', 'command': '$hook_cmd', 'timeout': 5}]}]
 with open('$HOME/.claude/settings.json', 'w') as f:
     json.dump(cfg, f, indent=2)
 " 2>/dev/null && echo "   Added SessionStart hook to settings.json"
         fi
     fi
 
-    # 6. Prompt for git identity if not configured
+    # 6. Set git identity from .env (or prompt)
     if [ -z "$(git config --global user.name)" ]; then
-        echo ""
-        echo "   Git identity not configured."
-        echo "   Run: git config --global user.name 'your-username'"
-        echo "   Run: git config --global user.email 'your-email'"
+        if [ -n "${GIT_USER_NAME:-}" ]; then
+            git config --global user.name "$GIT_USER_NAME"
+            echo "   Git user.name set to: $GIT_USER_NAME"
+        else
+            echo "   Git identity not configured. Set GIT_USER_NAME in .env"
+        fi
+    fi
+    if [ -z "$(git config --global user.email)" ]; then
+        if [ -n "${GIT_USER_EMAIL:-}" ]; then
+            git config --global user.email "$GIT_USER_EMAIL"
+            echo "   Git user.email set to: $GIT_USER_EMAIL"
+        else
+            echo "   Git email not configured. Set GIT_USER_EMAIL in .env"
+        fi
     fi
 
-    # Install plugins if claude is available
-    if command -v claude &>/dev/null; then
-        claude marketplace add elb-pr/claudikins-marketplace 2>/dev/null || true
-        claude plugin install claudikins-kernel 2>/dev/null || true
-        claude plugin install claudikins-tool-executor 2>/dev/null || true
-        echo "   Claude Code setup restored + plugins installed."
+    # 6b. Generate SSH key if not present
+    if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
+        local ssh_comment="${SSH_KEY_COMMENT:-${GIT_USER_EMAIL:-$(whoami)}}"
+        mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+        ssh-keygen -t ed25519 -C "$ssh_comment" -f "$HOME/.ssh/id_ed25519" -N ""
+        echo "   SSH key generated: ~/.ssh/id_ed25519"
+        echo "   Add public key to GitHub: https://github.com/settings/keys"
+        echo "   Public key:"
+        cat "$HOME/.ssh/id_ed25519.pub"
     else
-        echo "   Claude Code config restored. Install plugins after installing claude."
+        echo "   SSH key already exists"
     fi
+
+    # Install all plugins if claude is available
+    if command -v claude &>/dev/null; then
+        # Add marketplaces
+        claude plugins marketplace add thedotmack --source github --repo thedotmack/claude-mem 2>/dev/null || true
+        claude plugins marketplace add claudikins-marketplace --source github --repo elb-pr/claudikins-marketplace 2>/dev/null || true
+
+        # Install claudikins plugins
+        claude plugins install claudikins-kernel --marketplace claudikins-marketplace 2>/dev/null || true
+        claude plugins install claudikins-tool-executor --marketplace claudikins-marketplace 2>/dev/null || true
+        claude plugins install claudikins-klaus --marketplace claudikins-marketplace 2>/dev/null || true
+        claude plugins install claudikins-grfp --marketplace claudikins-marketplace 2>/dev/null || true
+        claude plugins install claudikins-automatic-context-manager --marketplace claudikins-marketplace 2>/dev/null || true
+
+        # Install claude-mem (then disable — data migrated to Overseer)
+        claude plugins install claude-mem --marketplace thedotmack 2>/dev/null || true
+        claude plugins disable claude-mem@thedotmack 2>/dev/null || true
+
+        echo "   Plugins installed:"
+        echo "     - claudikins-kernel (plan/execute/verify/ship workflow)"
+        echo "     - claudikins-tool-executor (96 MCP tools via 3-tool interface)"
+        echo "     - claudikins-klaus (debugging agent)"
+        echo "     - claudikins-grfp (README creation pipeline)"
+        echo "     - claudikins-automatic-context-manager (auto handoff at 60%)"
+        echo "     - claude-mem (DISABLED — data in Overseer)"
+    else
+        echo "   Claude Code config restored. Install plugins after installing claude:"
+        echo "     claude plugins marketplace add thedotmack --source github --repo thedotmack/claude-mem"
+        echo "     claude plugins marketplace add claudikins-marketplace --source github --repo elb-pr/claudikins-marketplace"
+        echo "     claude plugins install claudikins-kernel --marketplace claudikins-marketplace"
+        echo "     claude plugins install claudikins-tool-executor --marketplace claudikins-marketplace"
+        echo "     claude plugins install claudikins-klaus --marketplace claudikins-marketplace"
+        echo "     claude plugins install claudikins-grfp --marketplace claudikins-marketplace"
+        echo "     claude plugins install claudikins-automatic-context-manager --marketplace claudikins-marketplace"
+        echo "     claude plugins install claude-mem --marketplace thedotmack"
+        echo "     claude plugins disable claude-mem@thedotmack"
+    fi
+
+    # 7. Generate .zshrc.local from .env (API keys available at shell runtime)
+    local zshrc_local="$DOTFILES/zsh/.zshrc.local"
+    echo "# Auto-generated from .env — do not commit (gitignored)" > "$zshrc_local"
+    [ -n "${GEMINI_API_KEY:-}" ] && echo "export GEMINI_API_KEY='$GEMINI_API_KEY'" >> "$zshrc_local"
+    [ -n "${APIFY_TOKEN:-}" ] && echo "export APIFY_TOKEN='$APIFY_TOKEN'" >> "$zshrc_local"
+    [ -n "${CLAUDE_BACKUP_DIR:-}" ] && echo "export CLAUDE_BACKUP_DIR='$CLAUDE_BACKUP_DIR'" >> "$zshrc_local"
+    echo "   Generated .zshrc.local from .env"
 
     echo ""
     echo "   Memory system wired:"
     echo "     - SessionStart hook (daily log + knowledge index injection)"
+    echo "     - UserPromptSubmit hook (prompt classification)"
     echo "     - Stop hook (session capture on exit)"
     echo "     - PreCompact hook (capture before context compression)"
-    echo "     - Overseer MCP server (semantic search across all memories)"
+    echo "     - Overseer MCP server (hybrid search across 1298+ memories)"
+    echo ""
+    echo "   Manual steps remaining:"
+    echo "     1. claude login (Anthropic auth)"
+    echo "     2. gh auth login (GitHub auth)"
+    if [ -z "${GIT_USER_EMAIL:-}" ]; then
+        echo "     3. Set GIT_USER_EMAIL in .env and re-run, or:"
+        echo "        git config --global user.email 'your-email'"
+    fi
+    if [ -z "${GEMINI_API_KEY:-}" ]; then
+        echo "     4. Set GEMINI_API_KEY in .env (for Gemini MCP tools)"
+    fi
     echo "   Restart Claude Code to activate."
 }
 
@@ -743,6 +809,15 @@ main() {
     # Get sudo upfront and keep it alive throughout
     sudo -v
     while true; do sudo -n true; sleep 55; kill -0 "$$" || exit; done 2>/dev/null &
+
+    # Source .env early — git config, API keys, SMB all read from here
+    if [ -f "$DOTFILES/.env" ]; then
+        source "$DOTFILES/.env"
+        echo ":: Loaded .env"
+    else
+        echo ":: No .env found — copy .env.example to .env and fill in your values."
+        echo "   Some features (SMB mount, git config, API keys) will need manual setup."
+    fi
 
     preflight
     install_packages

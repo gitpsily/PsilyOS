@@ -54,6 +54,7 @@ alias cleanup='sudo pacman -Rns $(pacman -Qdtq) 2>/dev/null; sudo paccache -r'
 # Shortcuts
 alias wall='~/.config/scripts/wallpaper.sh'
 alias shot='~/.config/scripts/screenshot.sh'
+alias claude-backup='~/.config/scripts/claude-backup.sh'
 
 # Disable autocorrect for commands zsh gets wrong
 alias awww='nocorrect awww'
@@ -83,7 +84,7 @@ if command -v starship &>/dev/null; then
 fi
 
 # bun completions
-[ -s "/home/psily/.bun/_bun" ] && source "/home/psily/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
@@ -91,3 +92,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 # Local overrides (not committed to git — personal aliases, claude-backup, etc.)
 [ -f "${0:A:h}/.zshrc.local" ] && source "${0:A:h}/.zshrc.local"
+
+. "$HOME/.local/bin/env"
+
