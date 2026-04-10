@@ -6,7 +6,7 @@
 
 * {
     bg:      {{background}}dd;
-    fg:      {{foreground}};
+    fg:      #e0e0e0;
     accent:  {{color4}};
     surface: {{color0}};
     overlay: {{color8}};

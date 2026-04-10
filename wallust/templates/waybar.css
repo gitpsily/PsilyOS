@@ -5,7 +5,7 @@
 /* └──────────────────────────────────────────┘ */
 
 @define-color bg      {{background}};
-@define-color fg      {{foreground}};
+@define-color fg      #e0e0e0;
 @define-color accent  {{color4}};
 @define-color accent2 {{color5}};
 @define-color surface {{color0}};
