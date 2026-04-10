@@ -7,6 +7,7 @@
 rofi -dmenu -p "Keybinds" -i -no-custom -theme-str 'window { width: 550px; }' << 'EOF'
 Super+Return        Terminal
 Super+B             Browser (Librewolf)
+Super+/             Keybind Cheat Sheet
 Super+Space         App Launcher (Rofi)
 Super+Q             Kill Window
 Super+F             Fullscreen
