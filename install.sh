@@ -625,6 +625,16 @@ main() {
     enable_services
     download_wallpapers
 
+    # Generate initial theme configs from wallust templates
+    if command -v wallust &>/dev/null; then
+        local first_wall=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | head -1)
+        if [ -n "$first_wall" ]; then
+            echo ""
+            echo ":: Generating initial theme from $first_wall..."
+            wallust run "$first_wall"
+        fi
+    fi
+
     echo ""
     echo "  ╔══════════════════════════════════════╗"
     echo "  ║       PsilyOS installed.             ║"
