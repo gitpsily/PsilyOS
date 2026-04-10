@@ -553,8 +553,11 @@ restore_claude() {
 
     rm -rf "$tmpdir"
 
-    # Install python deps for overseer/hooks
-    pip install --user chromadb 2>/dev/null || true
+    # Install python deps for overseer/hooks (venv required on Arch)
+    if [ ! -d "$HOME/.local/share/overseer-venv" ]; then
+        python -m venv "$HOME/.local/share/overseer-venv"
+    fi
+    "$HOME/.local/share/overseer-venv/bin/pip" install chromadb 2>/dev/null || true
 
     # Install plugins if claude is available
     if command -v claude &>/dev/null; then
