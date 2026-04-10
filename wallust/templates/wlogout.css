@@ -7,7 +7,7 @@
 window {
     font-family: "JetBrainsMono Nerd Font", monospace;
     font-size: 14px;
-    color: #e0e0e0;
+    color: #ffffff;
     background-color: rgba(26, 27, 38, 0.97);
 }
 
@@ -16,7 +16,7 @@ button {
     background-position: center;
     background-size: 25%;
     background-color: transparent;
-    border: 2px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     margin: 10px;
     transition: all 0.3s ease;
