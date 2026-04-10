@@ -382,21 +382,14 @@ setup_vm() {
                 ;;
         esac
 
-        # Create VM-specific Hyprland env vars
-        local vm_conf="$DOTFILES/hypr/vm.conf"
-        cat > "$vm_conf" << 'VMCONF'
-# VM-specific settings (auto-generated)
-env = WLR_NO_HARDWARE_CURSORS,1
-env = WLR_RENDERER_ALLOW_SOFTWARE,1
-VMCONF
-
-        # Source vm.conf from hyprland.conf if not already
-        if ! grep -q "vm.conf" "$DOTFILES/hypr/hyprland.conf"; then
-            sed -i '/source = .\/autostart.conf/a source = ./vm.conf' "$DOTFILES/hypr/hyprland.conf"
+        # Set VM renderer env vars in bash_profile (must be set BEFORE Hyprland launches)
+        if ! grep -q "WLR_NO_HARDWARE_CURSORS" "$HOME/.bash_profile" 2>/dev/null; then
+            echo 'export WLR_NO_HARDWARE_CURSORS=1' >> "$HOME/.bash_profile"
+            echo 'export WLR_RENDERER_ALLOW_SOFTWARE=1' >> "$HOME/.bash_profile"
         fi
 
         echo "   Guest tools configured."
-        echo "   VM renderer env vars set."
+        echo "   VM renderer env vars added to ~/.bash_profile"
     fi
 }
 
