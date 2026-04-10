@@ -404,8 +404,8 @@ setup_smb() {
         echo ""
         echo ":: No .env file found — skipping SMB mount."
         echo "   To enable, create $envfile with:"
-        echo "     SMB_IP=10.69.1.218"
-        echo "     SMB_SHARE=storage"
+        echo "     SMB_IP=your_nas_ip"
+        echo "     SMB_SHARE=your_share"
         echo "     SMB_USER=your_user"
         echo "     SMB_PASS=your_pass"
         return
@@ -454,6 +454,41 @@ create_dirs() {
     mkdir -p "$HOME/Pictures/screenshots"
     mkdir -p "$HOME/.cache/psilyos"
     mkdir -p "$HOME/.cache/awww"
+}
+
+# ── Restore Claude Code Setup ────────────────
+restore_claude() {
+    # Check NAS mount first, then local
+    local backup=""
+    if [ -f "/mnt/storage/claude-setup-backup.tar.gz" ]; then
+        backup="/mnt/storage/claude-setup-backup.tar.gz"
+    elif [ -f "$DOTFILES/claude-setup-backup.tar.gz" ]; then
+        backup="$DOTFILES/claude-setup-backup.tar.gz"
+    fi
+
+    if [ -z "$backup" ]; then
+        echo ""
+        echo ":: No Claude Code backup found — skipping restore."
+        echo "   Place claude-setup-backup.tar.gz on NAS or in PsilyOS dir to restore."
+        return
+    fi
+
+    echo ""
+    echo ":: Restoring Claude Code setup from $backup..."
+
+    # Extract relative to home (backup paths start with home/username/)
+    mkdir -p "$HOME/.claude"
+    tar xzf "$backup" --strip-components=2 -C "$HOME" 2>/dev/null || true
+
+    # Install plugins if claude is available
+    if command -v claude &>/dev/null; then
+        claude marketplace add elb-pr/claudikins-marketplace 2>/dev/null || true
+        claude plugin install claudikins-kernel 2>/dev/null || true
+        claude plugin install claudikins-tool-executor 2>/dev/null || true
+        echo "   Claude Code setup restored + plugins installed."
+    else
+        echo "   Claude Code config restored. Install plugins after installing claude."
+    fi
 }
 
 # ── Fix SDDM Session ─────────────────────────
@@ -561,6 +596,7 @@ main() {
     setup_nvidia
     setup_cooling
     setup_vm
+    restore_claude
     setup_libvirt
     setup_smb
     fix_sddm_session

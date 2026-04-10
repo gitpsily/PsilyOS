@@ -5,3 +5,4 @@
 .cache/
 .env
 .smbcredentials
+claude-setup-backup.tar.gz

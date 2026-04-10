@@ -6,65 +6,109 @@ Change your wallpaper and the entire desktop follows. Terminal, bar, launcher, n
 
 ## What You Get
 
-|                   |                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------- |
-| **Compositor**    | Hyprland — tiling Wayland compositor with buttery animations                          |
-| **Terminal**      | Ghostty (Kitty as backup)                                                             |
-| **Shell**         | Zsh with Starship prompt                                                              |
-| **Status Bar**    | Waybar — top bar, workspace indicators, system tray                                   |
-| **Launcher**      | Rofi — app launcher, window switcher, clipboard history                               |
-| **Notifications** | Mako — minimal, themed, stays out of the way                                          |
-| **Lock Screen**   | Hyprlock — blurred screenshot, themed input                                           |
-| **Idle**          | Hypridle — dims, locks, sleeps on schedule                                            |
-| **Wallpaper**     | swww — smooth animated transitions                                                    |
-| **Theming**       | wallust — generates a 16-color palette from your wallpaper and cascades it everywhere |
-| **File Manager**  | Thunar (GUI) + yazi (TUI for the terminal heads)                                      |
-| **Screenshots**   | grim + slurp — full screen, region, or active window, auto-copied to clipboard        |
-| **Clipboard**     | wl-clipboard + cliphist — persistent history, searchable via Rofi                     |
-| **Multiplexer**   | tmux — with dev layouts and agent swarm mode                                          |
-| **Editor**        | Neovim                                                                                |
-| **Browser**       | Chromium                                                                              |
-| **Monitor**       | btop                                                                                  |
-| **Logout**        | wlogout — lock, logout, suspend, reboot, shutdown                                     |
-| **Login**         | SDDM                                                                                  |
+### Desktop
+
+|                     |                                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| **Compositor**      | Hyprland — tiling Wayland compositor with buttery animations                                   |
+| **Terminal**        | Ghostty + Kitty + Foot (fallback for VMs)                                                      |
+| **Shell**           | Zsh with Starship prompt                                                                       |
+| **Status Bar**      | Waybar — workspace indicators, clock, volume, network, bluetooth, battery, system tray         |
+| **Launcher**        | Rofi — app launcher, window switcher, clipboard history, wallpaper picker                      |
+| **Notifications**   | Mako — minimal, themed, stays out of the way                                                   |
+| **Lock Screen**     | Hyprlock — blurred screenshot, themed input, clock display                                     |
+| **Idle**            | Hypridle — dims at 5min, locks at 10min, screen off at 15min                                   |
+| **Wallpaper**       | awww — smooth animated transitions, wallust color extraction                                   |
+| **Theming**         | wallust — generates a 16-color palette from your wallpaper and cascades it across 8 components |
+| **File Manager**    | Thunar (GUI) + yazi (TUI)                                                                      |
+| **Screenshots**     | grim + slurp — full screen, region, or active window, auto-copied to clipboard                 |
+| **Clipboard**       | wl-clipboard + cliphist — persistent history, searchable via Rofi                              |
+| **Multiplexer**     | tmux — with dev layouts and agent swarm mode                                                   |
+| **Monitor Manager** | nwg-displays — GUI for multi-monitor setup                                                     |
+| **Logout**          | wlogout — lock, logout, suspend, reboot, shutdown                                              |
+| **Login**           | SDDM                                                                                           |
+
+### Apps
+
+|                    |                                   |
+| ------------------ | --------------------------------- |
+| **Editor**         | Neovim                            |
+| **Browsers**       | Chromium, Librewolf               |
+| **Office**         | LibreOffice                       |
+| **Media**          | Plex Desktop                      |
+| **Chat**           | Discord                           |
+| **Passwords**      | 1Password                         |
+| **System Monitor** | btop                              |
+| **Dev Tools**      | Claude Code (AI coding assistant) |
+
+### Virtualization
+
+|                |                                  |
+| -------------- | -------------------------------- |
+| **Hypervisor** | libvirt + QEMU                   |
+| **Viewer**     | virt-viewer (with SPICE support) |
+| **Networking** | dnsmasq + ebtables               |
+
+### Hardware (bare metal, auto-detected)
+
+|                |                                                                      |
+| -------------- | -------------------------------------------------------------------- |
+| **NVIDIA**     | Auto-installs drivers, sets Hyprland env vars, configures mkinitcpio |
+| **AIO Cooler** | liquidctl with aggressive pump + fan curves via systemd service      |
+| **GPU Fans**   | NVIDIA fan control at 80% manual mode                                |
+| **Sensors**    | lm_sensors for temperature monitoring                                |
 
 ## Install
 
-Fresh Arch install. One command. Done.
+Fresh Arch install. Clone, fill in your config, run.
 
 ```bash
 git clone https://github.com/gitpsily/PsilyOS.git ~/PsilyOS
 cd ~/PsilyOS
+
+# Optional: set up SMB/NAS mount
+cp .env.example .env
+nano .env  # fill in your NAS credentials
+
+# Run
 chmod +x install.sh
 ./install.sh
 ```
 
-The installer will:
+The installer handles everything:
 
-- Install an AUR helper (yay) if you don't have one
-- Pull all packages from official repos and AUR
-- Symlink every config to `~/.config/`
-- Set zsh as your default shell
-- Enable SDDM, NetworkManager, and Bluetooth
-- Create wallpaper and screenshot directories
+- Installs yay (AUR helper) if needed
+- Installs all packages from official repos and AUR (one at a time, survives failures)
+- Symlinks all configs to `~/.config/`
+- Detects VMs and installs guest tools (VMware, KVM, VirtualBox)
+- Detects NVIDIA GPUs and configures drivers + Hyprland env vars
+- Sets up aggressive cooling profiles (AIO pump, fans, GPU)
+- Mounts SMB/NAS shares (if `.env` is configured)
+- Fixes SDDM session to use `start-hyprland`
+- Installs Claude Code via npm
+- Restores Claude Code setup from backup (if found on NAS)
+- Enables SDDM, NetworkManager, Bluetooth, libvirtd
+- Downloads 10 wallpapers on first install
+- Sudo keepalive — asks for your password once
 
-Reboot. Log in through SDDM. You're in Hyprland. Hit `Super+Shift+W` to pick a wallpaper and watch the whole desktop transform.
+Reboot. Log in through SDDM. You're in Hyprland.
 
 ## Key Bindings
 
-PsilyOS uses `Super` as the mod key. Vim-style navigation throughout.
+`Super` is the mod key. Vim-style navigation throughout.
 
 ### Essentials
 
-| Key                 | Action             |
-| ------------------- | ------------------ |
-| `Super + Return`    | Open terminal      |
-| `Super + Space`     | App launcher       |
-| `Super + Q`         | Kill active window |
-| `Super + F`         | Fullscreen         |
-| `Super + V`         | Toggle floating    |
-| `Super + Shift + Q` | Logout menu        |
-| `Super + L`         | Lock screen        |
+| Key                 | Action                  |
+| ------------------- | ----------------------- |
+| `Super + Return`    | Open terminal (Ghostty) |
+| `Super + Space`     | App launcher (Rofi)     |
+| `Super + Q`         | Kill active window      |
+| `Super + F`         | Fullscreen              |
+| `Super + V`         | Toggle floating         |
+| `Super + Shift + Q` | Logout menu             |
+| `Super + L`         | Lock screen             |
+| `Super + M`         | Exit Hyprland           |
 
 ### Navigation
 
@@ -76,6 +120,7 @@ PsilyOS uses `Super` as the mod key. Vim-style navigation throughout.
 | `Super + Shift + H/J/K/L` | Move window                    |
 | `Super + Ctrl + H/J/K/L`  | Resize window                  |
 | `Super + mouse drag`      | Move or resize with mouse      |
+| `Super + scroll`          | Scroll through workspaces      |
 
 ### Tools
 
@@ -93,7 +138,7 @@ PsilyOS uses `Super` as the mod key. Vim-style navigation throughout.
 
 This is the heart of PsilyOS. wallust extracts a color palette from your wallpaper and generates config files for every component through Jinja2 templates.
 
-**One wallpaper change updates:**
+**One wallpaper change updates 8 configs:**
 
 - Hyprland border colors and shadows
 - Waybar background, text, and accent colors
@@ -104,28 +149,28 @@ This is the heart of PsilyOS. wallust extracts a color palette from your wallpap
 - tmux status bar and pane borders
 - wlogout button styling
 
-The templates live in `wallust/templates/`. The generated configs get written to `~/.config/`. If you want to tweak how a color maps to a component, edit the template — not the generated file.
+The templates live in `wallust/templates/`. The generated configs get written to `~/.config/`. Edit the template, not the generated file.
 
 ### How It Works
 
 ```
-wallpaper.sh "~/Pictures/wallpapers/mountain.jpg"
+Super+Shift+W  ->  wallpaper.sh
   |
-  |-- swww sets the wallpaper (animated transition)
-  |-- wallust extracts 16 colors
-  |-- wallust renders 8 templates -> 8 config files
-  |-- Hyprland reloads
-  |-- Waybar reloads
-  +-- Mako reloads
+  |-- awww sets the wallpaper (animated transition)
+  |-- wallust extracts 16 colors (kmeans, harddark16 palette)
+  |-- wallust renders 8 Jinja2 templates -> 8 config files
+  |-- hyprctl reload
+  |-- waybar reloads
+  +-- mako reloads
 ```
 
 Everything updates live. No logout required.
 
 ## tmux Agent Workflows
 
-PsilyOS includes two tmux layout scripts built for working with AI coding agents.
+Two tmux layout scripts for working with AI coding agents.
 
-### Dev Layout — `tdl`
+### Dev Layout -- `tdl`
 
 Three-pane setup: editor on the left, agent pane top-right, shell bottom-right.
 
@@ -142,9 +187,9 @@ tdl              # starts "dev" session in current dir
 tdl myproject .  # custom session name + directory
 ```
 
-### Swarm Layout — `tsl`
+### Swarm Layout -- `tsl`
 
-N tiled panes, each running the same command. Spin up a grid of agents and watch them work.
+N tiled panes, each running the same command.
 
 ```
 +------+------+------+
@@ -181,7 +226,7 @@ PsilyOS/
 |-- hypr/                     Hyprland configuration
 |   |-- hyprland.conf           Main config (sources everything below)
 |   |-- keybinds.conf           All key bindings
-|   |-- rules.conf              Window rules + opacity
+|   |-- rules.conf              Window rules
 |   |-- theme.conf              Colors (wallust generates this)
 |   |-- autostart.conf          Startup daemons
 |   |-- hyprlock.conf           Lock screen (wallust generates this)
@@ -194,32 +239,33 @@ PsilyOS/
 |   +-- theme.rasi              Theme (wallust generates this)
 |-- mako/                     Notifications (wallust generates this)
 |-- ghostty/                  Terminal (wallust generates this)
+|-- foot/                     Fallback terminal (VM-friendly)
 |-- tmux/                     Terminal multiplexer (wallust generates this)
 |-- wallust/                  Theming engine
-|   |-- wallust.toml            Template-to-target mappings
-|   +-- templates/              Jinja2 templates (source of truth for theming)
+|   |-- wallust.toml            Template-to-target mappings (v3 format)
+|   +-- templates/              8 Jinja2 templates (source of truth for theming)
 |-- wlogout/                  Logout menu
 |   |-- layout                  Button definitions
 |   +-- style.css               Styles (wallust generates this)
-|-- zsh/                      Shell
-|   |-- .zshrc                  Config, aliases, env vars
+|-- zsh/                      Shell config
+|   |-- .zshrc                  Aliases, env vars, starship init
 |   +-- .zprofile               Auto-start Hyprland on tty1
-|-- starship/                 Prompt
-|   +-- starship.toml           Minimal, informative prompt config
-|-- yazi/                     TUI file manager
-|-- btop/                     System monitor
+|-- starship/                 Prompt config
+|-- yazi/                     TUI file manager config
+|-- btop/                     System monitor config
 |-- scripts/                  Utility scripts
 |   |-- wallpaper.sh            Set wallpaper + regenerate all themes
 |   |-- screenshot.sh           Capture + clipboard + notification
-|   |-- tmux-dev.sh             3-pane dev layout
-|   +-- tmux-swarm.sh           N-pane agent grid
+|   |-- tmux-dev.sh             3-pane dev layout (tdl)
+|   +-- tmux-swarm.sh           N-pane agent grid (tsl)
+|-- .env.example              SMB/NAS mount config template
 |-- install.sh                One-shot installer
 +-- README.md
 ```
 
 ## Shell Aliases
 
-PsilyOS sets up a handful of useful aliases in `.zshrc`:
+Set up in `.zshrc`:
 
 | Alias     | Command                               |
 | --------- | ------------------------------------- |
@@ -235,25 +281,46 @@ PsilyOS sets up a handful of useful aliases in `.zshrc`:
 
 ## Hardware Support
 
-The installer auto-detects your environment and configures accordingly:
+The installer auto-detects your environment and configures accordingly. Everything is skipped in VMs.
 
-**NVIDIA GPU:** Auto-detected on bare metal. Installs drivers, sets Hyprland env vars (`GBM_BACKEND`, `__GLX_VENDOR_LIBRARY_NAME`, etc.), adds kernel modules to mkinitcpio. Creates `hypr/nvidia.conf` which is sourced automatically.
+**NVIDIA GPU:** Installs `nvidia`, `nvidia-utils`, `nvidia-settings`, `lib32-nvidia-utils`. Creates `hypr/nvidia.conf` with Hyprland env vars (`GBM_BACKEND`, `__GLX_VENDOR_LIBRARY_NAME`, `LIBVA_DRIVER_NAME`, `NVD_BACKEND`). Adds nvidia modules to mkinitcpio and rebuilds initramfs. Disables hardware cursors.
 
-**AIO Cooler (liquidctl):** Aggressive pump and fan profiles applied at boot via a user systemd service. Pump ramps to 100% at 45C, fans follow similarly. Adjust curves in `scripts/cooling.sh`.
+**AIO Cooler:** liquidctl profiles applied at boot via user systemd service. Aggressive curves: pump hits 100% at 45C, fans hit 100% at 45C. Tune the temperature/speed pairs in `scripts/cooling.sh`.
 
-**GPU Fan:** Set to 80% manual mode on NVIDIA GPUs. Tune in `scripts/cooling.sh`.
+**GPU Fan:** Set to 80% manual mode on NVIDIA GPUs. Adjust in `scripts/cooling.sh`.
 
-**VM Detection:** Auto-installs guest tools for VMware, KVM/QEMU, and VirtualBox. Skips all hardware configs (NVIDIA, cooling) when running in a VM.
+**VM Detection:** Auto-installs guest tools for VMware (`open-vm-tools`), KVM/QEMU (`qemu-guest-agent`, `spice-vdagent`), and VirtualBox (`virtualbox-guest-utils`). Sets `WLR_NO_HARDWARE_CURSORS` and `WLR_RENDERER_ALLOW_SOFTWARE` in `/etc/environment` for VMware.
 
-## Notes
+## SMB/NAS Mount
 
-**VM Testing:** Works out of the box in VMware with a base Arch install. Auto-detects VM and installs guest tools.
+Copy `.env.example` to `.env` and fill in your NAS credentials before running the installer:
 
-**Fonts:** JetBrainsMono Nerd Font everywhere. The installer handles it.
+```bash
+cp .env.example .env
+nano .env
+```
 
-**Wallpapers:** 10 nature photos downloaded on first install. Drop more into `~/Pictures/wallpapers/` — jpg, png, or webp. `Super+Shift+W` picks one and themes the entire desktop.
+The installer creates a credentials file at `~/.smbcredentials` (600 permissions), adds an fstab entry with `x-systemd.automount`, and mounts the share. The `.env` and `.smbcredentials` files are gitignored.
 
-**SMB/NAS Mount:** Create a `.env` file (see `.env.example`) with your NAS credentials. The installer auto-mounts and adds an fstab entry.
+## Claude Code Integration
+
+The installer installs Claude Code via npm. If a `claude-setup-backup.tar.gz` is found on the NAS mount or in the PsilyOS directory, the installer restores your full Claude Code setup including settings, skills, plugins, and memory.
+
+To create a backup of your current Claude Code setup:
+
+```bash
+tar czf ~/claude-setup-backup.tar.gz \
+  -C / \
+  home/$USER/.claude/settings.json \
+  home/$USER/.claude/settings.local.json \
+  home/$USER/.claude/skills/ \
+  home/$USER/.claude/plugins/installed_plugins.json \
+  home/$USER/.claude/plugins/known_marketplaces.json \
+  home/$USER/.claude/projects/*/memory/ \
+  home/$USER/CLAUDE.md
+```
+
+Place the tarball on your NAS or in the PsilyOS directory before running the installer.
 
 ## License
 
