@@ -75,7 +75,7 @@ export XDG_SESSION_TYPE=wayland
 export XDG_SESSION_DESKTOP=Hyprland
 
 # ── Wallust Colors ───────────────────────────
-[[ -f ~/.cache/wallust/sequences ]] && command cat ~/.cache/wallust/sequences 2>/dev/null
+# Terminal colors handled by foot/ghostty config, not escape sequences
 
 # ── Starship Prompt ──────────────────────────
 if command -v starship &>/dev/null; then

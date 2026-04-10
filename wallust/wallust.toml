@@ -19,4 +19,3 @@ ghostty  = { template = "ghostty.conf",  target = "~/.config/ghostty/config" }
 hyprlock = { template = "hyprlock.conf", target = "~/.config/hypr/hyprlock.conf" }
 tmux     = { template = "tmux.conf",     target = "~/.config/tmux/tmux.conf" }
 wlogout  = { template = "wlogout.css",   target = "~/.config/wlogout/style.css" }
-foot     = { template = "foot.ini",     target = "~/.config/foot/foot.ini" }

@@ -28,3 +28,9 @@
     "text" : "Shutdown",
     "keybind" : "p"
 }
+{
+    "label" : "hibernate",
+    "action" : "systemctl hibernate",
+    "text" : "Hibernate",
+    "keybind" : "h"
+}

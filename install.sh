@@ -562,7 +562,7 @@ download_wallpapers() {
         "https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=3840&q=90"
         "https://images.unsplash.com/photo-1518173946687-a1e6e3b40e35?w=3840&q=90"
         "https://images.unsplash.com/photo-1465056836900-8f1e940c1f8a?w=3840&q=90"
-        "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=3840&q=90"
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=3840&q=90"
         "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=3840&q=90"
         "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=3840&q=90"
     )
