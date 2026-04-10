@@ -199,6 +199,10 @@ symlink_configs() {
     # Shell configs live in $HOME
     link_config "$DOTFILES/zsh/.zshrc"    "$HOME/.zshrc"
     link_config "$DOTFILES/zsh/.zprofile" "$HOME/.zprofile"
+
+    # Clean up stale source lines from previous installs
+    sed -i '/vm.conf/d' "$DOTFILES/hypr/hyprland.conf" 2>/dev/null || true
+    sed -i '/nvidia.conf/d' "$DOTFILES/hypr/hyprland.conf" 2>/dev/null || true
 }
 
 # ── Set Default Shell ────────────────────────
