@@ -6,4 +6,13 @@
 .env
 .smbcredentials
 claude-setup-backup.tar.gz
+
+# Wallust-generated files (templates are the source of truth)
+hypr/theme.conf
+hypr/hyprlock.conf
+waybar/style.css
+rofi/theme.rasi
+mako/config
+ghostty/config
+tmux/tmux.conf
 wlogout/style.css
