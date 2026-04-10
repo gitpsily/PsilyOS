@@ -73,6 +73,13 @@ install_packages() {
 
         # Apps
         neovim btop chromium libreoffice-fresh discord
+        vlc gimp obs-studio docker pavucontrol
+
+        # Gaming
+        steam mangohud lutris
+
+        # Thunar extras
+        thunar-archive-plugin xarchiver
 
         # Virtualization
         libvirt qemu-full virt-viewer dnsmasq ebtables
@@ -103,6 +110,8 @@ install_packages() {
         librewolf-bin
         1password
         plex-desktop
+        cursor-bin
+        prismlauncher
     )
 
     # Install official packages (one at a time to survive failures)
@@ -578,6 +587,8 @@ enable_services() {
     sudo systemctl enable NetworkManager 2>/dev/null || true
     sudo systemctl enable bluetooth 2>/dev/null || true
     sudo systemctl enable libvirtd 2>/dev/null || true
+    sudo systemctl enable docker 2>/dev/null || true
+    sudo usermod -aG docker "$USER" 2>/dev/null || true
 }
 
 # ── Run ──────────────────────────────────────
