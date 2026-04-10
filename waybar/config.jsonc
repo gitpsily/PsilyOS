@@ -8,8 +8,8 @@
     "spacing": 0,
 
     "modules-left": [
-        "custom/keybinds",
         "hyprland/workspaces",
+        "custom/keybinds",
         "hyprland/window"
     ],
 
