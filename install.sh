@@ -505,6 +505,24 @@ create_dirs() {
     mkdir -p "$HOME/Pictures/screenshots"
     mkdir -p "$HOME/.cache/psilyos"
     mkdir -p "$HOME/.cache/awww"
+
+    # Create empty placeholders for wallust-generated configs.
+    # Hyprland/waybar/etc crash on boot if source'd files don't exist yet.
+    # wallust run will overwrite these with real themed versions.
+    local placeholders=(
+        "$DOTFILES/hypr/theme.conf"
+        "$DOTFILES/waybar/style.css"
+        "$DOTFILES/rofi/theme.rasi"
+        "$DOTFILES/mako/config"
+        "$DOTFILES/foot/foot.ini"
+        "$DOTFILES/ghostty/config"
+        "$DOTFILES/tmux/tmux.conf"
+        "$DOTFILES/wlogout/style.css"
+    )
+    for f in "${placeholders[@]}"; do
+        [ -f "$f" ] || touch "$f"
+    done
+    echo "   Wallust placeholders created (overwritten on first theme apply)"
 }
 
 # ── Restore Claude Code Setup ────────────────
