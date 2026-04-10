@@ -106,6 +106,9 @@ install_packages() {
 
         # Build deps + Node (for claude code)
         base-devel git nodejs npm
+
+        # Python (for claude code hooks + overseer)
+        python python-pip yamllint
     )
 
     # AUR packages
@@ -496,9 +499,52 @@ restore_claude() {
     echo ""
     echo ":: Restoring Claude Code setup from $backup..."
 
-    # Extract relative to home (backup paths start with home/username/)
-    mkdir -p "$HOME/.claude"
-    tar xzf "$backup" --strip-components=2 -C "$HOME" 2>/dev/null || true
+    # Extract to a temp dir so we can remap paths
+    local tmpdir=$(mktemp -d)
+    tar xzf "$backup" -C "$tmpdir" 2>/dev/null || true
+
+    # Find the home dir in the backup (e.g., home/claude or home/psily)
+    local backup_home=$(find "$tmpdir/home" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
+    if [ -z "$backup_home" ]; then
+        echo "   Could not find home directory in backup — skipping."
+        rm -rf "$tmpdir"
+        return
+    fi
+
+    local backup_user=$(basename "$backup_home")
+
+    # Copy .claude config
+    if [ -d "$backup_home/.claude" ]; then
+        cp -a "$backup_home/.claude" "$HOME/"
+    fi
+
+    # Copy overseer
+    if [ -d "$backup_home/overseer" ]; then
+        cp -a "$backup_home/overseer" "$HOME/"
+    fi
+
+    # Copy CLAUDE.md
+    if [ -f "$backup_home/CLAUDE.md" ]; then
+        cp -a "$backup_home/CLAUDE.md" "$HOME/"
+    fi
+
+    # Copy overseer data
+    mkdir -p "$HOME/.local/share"
+    [ -d "$backup_home/.local/share/overseer-chromadb" ] && cp -a "$backup_home/.local/share/overseer-chromadb" "$HOME/.local/share/"
+    [ -f "$backup_home/.local/share/overseer-graph.db" ] && cp -a "$backup_home/.local/share/overseer-graph.db" "$HOME/.local/share/"
+
+    # Remap project memory folder if username changed
+    local old_project="$HOME/.claude/projects/-home-${backup_user}"
+    local new_project="$HOME/.claude/projects/-home-$(whoami)"
+    if [ -d "$old_project" ] && [ "$old_project" != "$new_project" ]; then
+        mv "$old_project" "$new_project"
+        echo "   Remapped project memory: $backup_user -> $(whoami)"
+    fi
+
+    rm -rf "$tmpdir"
+
+    # Install python deps for overseer/hooks
+    pip install --user chromadb 2>/dev/null || true
 
     # Install plugins if claude is available
     if command -v claude &>/dev/null; then
