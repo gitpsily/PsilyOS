@@ -528,6 +528,16 @@ restore_claude() {
         cp -a "$backup_home/CLAUDE.md" "$HOME/"
     fi
 
+    # Copy claude-mem database
+    if [ -d "$backup_home/.claude-mem" ]; then
+        cp -a "$backup_home/.claude-mem" "$HOME/"
+    fi
+
+    # Copy claude startup config
+    if [ -f "$backup_home/.claude.json" ]; then
+        cp -a "$backup_home/.claude.json" "$HOME/"
+    fi
+
     # Copy overseer data
     mkdir -p "$HOME/.local/share"
     [ -d "$backup_home/.local/share/overseer-chromadb" ] && cp -a "$backup_home/.local/share/overseer-chromadb" "$HOME/.local/share/"
