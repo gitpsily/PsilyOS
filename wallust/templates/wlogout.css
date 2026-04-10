@@ -1,34 +1,35 @@
-/* ┌──────────────────────────────────────────┐ */
-/* │  wlogout (wallust generated)              │ */
-/* │  DO NOT EDIT — edit the template at      │ */
-/* │  wallust/templates/wlogout.css           │ */
-/* └──────────────────────────────────────────┘ */
+/* wlogout theme — wallust generated */
 
 window {
-    font-family: "JetBrainsMono Nerd Font", monospace;
-    font-size: 14px;
+    font-family: "Sans", "Arial", sans-serif;
+    font-size: 18px;
+    font-weight: bold;
     color: #ffffff;
-    background-color: rgba(26, 27, 38, 0.97);
+    background-color: rgba(10, 10, 15, 0.98);
 }
 
 button {
     background-repeat: no-repeat;
     background-position: center;
     background-size: 25%;
-    background-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(30, 30, 40, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     margin: 10px;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     transition: all 0.3s ease;
 }
 
 button:hover {
-    background-color: #24283b;
+    background-color: rgba(50, 50, 70, 0.95);
     border-color: {{color4}};
 }
 
 button:focus {
-    background-color: #24283b;
+    background-color: rgba(50, 50, 70, 0.95);
     border-color: {{color4}};
 }
 
