@@ -382,14 +382,14 @@ setup_vm() {
                 ;;
         esac
 
-        # Set VM renderer env vars in bash_profile (must be set BEFORE Hyprland launches)
-        if ! grep -q "WLR_NO_HARDWARE_CURSORS" "$HOME/.bash_profile" 2>/dev/null; then
-            echo 'export WLR_NO_HARDWARE_CURSORS=1' >> "$HOME/.bash_profile"
-            echo 'export WLR_RENDERER_ALLOW_SOFTWARE=1' >> "$HOME/.bash_profile"
+        # Set VM renderer env vars in /etc/environment (read by PAM before any session)
+        if ! grep -q "WLR_NO_HARDWARE_CURSORS" /etc/environment 2>/dev/null; then
+            echo 'WLR_NO_HARDWARE_CURSORS=1' | sudo tee -a /etc/environment > /dev/null
+            echo 'WLR_RENDERER_ALLOW_SOFTWARE=1' | sudo tee -a /etc/environment > /dev/null
         fi
 
         echo "   Guest tools configured."
-        echo "   VM renderer env vars added to ~/.bash_profile"
+        echo "   VM renderer env vars added to /etc/environment"
     fi
 }
 
