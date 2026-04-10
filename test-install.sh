@@ -65,19 +65,15 @@ else
     assert "SessionStart hook matches working settings.json format" "1"
 fi
 
-# ── Issue 5: set_shell should offer to switch ────
-# It currently only prints instructions — should at least ask
+# ── Issue 5: set_shell should actually switch to zsh ──
+# It must call chsh, not just echo instructions about it
 echo ""
 echo "-- Shell switching --"
-if grep -q 'chsh.*zsh' "$SCRIPT" | grep -v "echo\|#" 2>/dev/null; then
-    assert "set_shell actually switches to zsh (or prompts)" "0"
+# Check for actual chsh call (not inside echo/printf)
+if grep -A15 'set_shell()' "$SCRIPT" | grep -v 'echo\|printf\|#' | grep -q 'chsh'; then
+    assert "set_shell actually calls chsh (not just prints instructions)" "0"
 else
-    # Check if there's a read prompt or actual chsh call (not just echo)
-    if grep -A5 'set_shell()' "$SCRIPT" | grep -q 'read\|chsh -s'; then
-        assert "set_shell offers interactive switch or switches automatically" "0"
-    else
-        assert "set_shell offers interactive switch or switches automatically" "1"
-    fi
+    assert "set_shell actually calls chsh (not just prints instructions)" "1"
 fi
 
 # ── Issue 6: Wallpaper fallback ──────────────────
@@ -137,6 +133,16 @@ if grep -A10 'set_shell()' "$SCRIPT" | grep -q 'chsh\|read.*-r'; then
     assert "set_shell offers to switch or switches interactively" "0"
 else
     assert "set_shell offers to switch or switches interactively" "1"
+fi
+
+# ── Issue 12: GitHub credential helper ───────────
+# gh auth setup-git must be called so git push works after gh auth login
+echo ""
+echo "-- GitHub credential helper --"
+if grep -q 'gh auth setup-git' "$SCRIPT"; then
+    assert "gh credential helper configured via gh auth setup-git" "0"
+else
+    assert "gh credential helper configured via gh auth setup-git" "1"
 fi
 
 # ── Issue 11: Claude backup automation ───────────

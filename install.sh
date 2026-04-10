@@ -222,10 +222,18 @@ symlink_configs() {
 
 # ── Set Default Shell ────────────────────────
 set_shell() {
+    if [ "$(basename "$SHELL")" = "zsh" ]; then
+        echo ""
+        echo ":: Shell already set to zsh."
+        return
+    fi
+
     echo ""
-    echo ":: Shell: zsh is installed but NOT set as default."
-    echo "   To switch: chsh -s \$(which zsh)"
-    echo "   Test first: zsh (type 'exit' to return to bash)"
+    echo ":: Setting default shell to zsh..."
+    chsh -s "$(which zsh)" 2>/dev/null || {
+        echo "   chsh failed — you may need to run manually:"
+        echo "   chsh -s \$(which zsh)"
+    }
 }
 
 # ── Permissions ──────────────────────────────
@@ -643,7 +651,13 @@ with open('$HOME/.claude/settings.json', 'w') as f:
         fi
     fi
 
-    # 6b. Generate SSH key if not present
+    # 6b. Set up gh credential helper for git push
+    if command -v gh &>/dev/null; then
+        gh auth setup-git 2>/dev/null || true
+        echo "   GitHub credential helper configured"
+    fi
+
+    # 6c. Generate SSH key if not present
     if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
         local ssh_comment="${SSH_KEY_COMMENT:-${GIT_USER_EMAIL:-$(whoami)}}"
         mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
