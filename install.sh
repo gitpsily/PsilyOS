@@ -222,7 +222,11 @@ symlink_configs() {
 
 # ── Set Default Shell ────────────────────────
 set_shell() {
-    if [ "$(basename "$SHELL")" = "zsh" ]; then
+    # Check both $SHELL env var AND /etc/passwd (env var doesn't update until re-login)
+    local current_shell
+    current_shell=$(getent passwd "$USER" | cut -d: -f7)
+
+    if [ "$(basename "$current_shell")" = "zsh" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
         echo ""
         echo ":: Shell already set to zsh."
         return
@@ -230,7 +234,7 @@ set_shell() {
 
     echo ""
     echo ":: Setting default shell to zsh..."
-    chsh -s "$(which zsh)" 2>/dev/null || {
+    sudo chsh -s "$(which zsh)" "$USER" 2>/dev/null || {
         echo "   chsh failed — you may need to run manually:"
         echo "   chsh -s \$(which zsh)"
     }
