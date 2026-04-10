@@ -4,14 +4,14 @@
 /* │  wallust/templates/waybar.css            │ */
 /* └──────────────────────────────────────────┘ */
 
-@define-color bg      #1a1b26;
+@define-color bg      {{color0}};
 @define-color fg      #e0e0e0;
 @define-color accent  {{color4}};
 @define-color accent2 {{color5}};
-@define-color surface #24283b;
+@define-color surface {{color0}};
 @define-color overlay {{color8}};
-@define-color subtle  #a0a0a0;
-@define-color muted   #565f89;
+@define-color subtle  {{color7}};
+@define-color muted   {{color8}};
 @define-color warn    {{color3}};
 @define-color err     {{color1}};
 

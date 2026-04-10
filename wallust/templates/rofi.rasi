@@ -5,7 +5,7 @@
 /* └──────────────────────────────────────────┘ */
 
 * {
-    bg:      #1a1b26dd;
+    bg:      {{color0}}dd;
     fg:      #e0e0e0;
     accent:  {{color4}};
     surface: {{color0}};
