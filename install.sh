@@ -4,7 +4,7 @@
 # │  Clone it. Run it. You're done.          │
 # └──────────────────────────────────────────┘
 
-set -o pipefail
+# No set -e — we handle errors per-function so one failure doesn't kill the script
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 CONFIG="$HOME/.config"
@@ -536,6 +536,10 @@ enable_services() {
 
 # ── Run ──────────────────────────────────────
 main() {
+    # Get sudo upfront and keep it alive throughout
+    sudo -v
+    while true; do sudo -n true; sleep 55; kill -0 "$$" || exit; done 2>/dev/null &
+
     preflight
     install_packages
     install_claude_code
