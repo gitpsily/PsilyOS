@@ -4,7 +4,7 @@
 # │  Clone it. Run it. You're done.          │
 # └──────────────────────────────────────────┘
 
-set -euo pipefail
+set -o pipefail
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 CONFIG="$HOME/.config"
@@ -110,10 +110,12 @@ install_packages() {
     local failed=()
     for pkg in "${official[@]}"; do
         if ! pacman -Qi "$pkg" &>/dev/null; then
-            if sudo pacman -S --needed --noconfirm "$pkg" &>/dev/null; then
-                ((installed++))
+            echo "   Installing: $pkg"
+            if sudo pacman -S --needed --noconfirm "$pkg" 2>&1 | tail -1; then
+                installed=$((installed + 1))
             else
                 failed+=("$pkg")
+                echo "   FAILED: $pkg"
             fi
         fi
     done
@@ -121,15 +123,18 @@ install_packages() {
     # Install AUR packages (one at a time)
     for pkg in "${aur[@]}"; do
         if ! pacman -Qi "$pkg" &>/dev/null; then
-            if "$AUR_HELPER" -S --needed --noconfirm "$pkg" &>/dev/null; then
-                ((installed++))
+            echo "   Installing (AUR): $pkg"
+            if "$AUR_HELPER" -S --needed --noconfirm "$pkg" 2>&1 | tail -3; then
+                installed=$((installed + 1))
             else
                 failed+=("$pkg")
+                echo "   FAILED: $pkg"
             fi
         fi
     done
 
     if [ ${#failed[@]} -gt 0 ]; then
+        echo ""
         echo "   Installed $installed packages."
         echo "   Failed: ${failed[*]}"
         echo "   (You can install failed packages manually later)"
