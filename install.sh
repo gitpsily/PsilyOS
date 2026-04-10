@@ -105,7 +105,7 @@ install_packages() {
         wlr-randr
 
         # Build deps + Node (for claude code)
-        base-devel git nodejs npm
+        base-devel git nodejs npm github-cli
 
         # Python (for claude code hooks + overseer)
         python python-pip yamllint
