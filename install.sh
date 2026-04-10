@@ -177,7 +177,7 @@ link_config() {
     fi
 
     mkdir -p "$(dirname "$dst")"
-    ln -sf "$src" "$dst"
+    ln -sfn "$src" "$dst"
     echo "   Linked: $dst"
 }
 
@@ -425,6 +425,18 @@ setup_vm() {
             echo "   Added WLR env vars to /etc/environment"
         else
             echo "   WLR env vars already in /etc/environment"
+        fi
+
+        # Mask hyprland-update-screen — it crashes in VMs (SIGABRT on GTK render)
+        # Can't remove hyprland-guiutils (hard dep of hyprland), but the update
+        # splash is non-essential and kills the session when it crashes.
+        if [ -f /usr/bin/hyprland-update-screen ]; then
+            sudo dpkg-divert --quiet --divert /usr/bin/hyprland-update-screen.real --rename /usr/bin/hyprland-update-screen 2>/dev/null || \
+            sudo mv /usr/bin/hyprland-update-screen /usr/bin/hyprland-update-screen.real 2>/dev/null || true
+            echo '#!/bin/sh' | sudo tee /usr/bin/hyprland-update-screen > /dev/null
+            echo 'exit 0' | sudo tee -a /usr/bin/hyprland-update-screen > /dev/null
+            sudo chmod +x /usr/bin/hyprland-update-screen
+            echo "   Masked hyprland-update-screen (crashes in VMs)"
         fi
 
         echo "   Guest tools configured."
@@ -742,11 +754,13 @@ fix_sddm_session() {
     echo ":: Fixing Hyprland SDDM session..."
     local session="/usr/share/wayland-sessions/hyprland.desktop"
     if [ -f "$session" ]; then
-        if grep -q "Exec=Hyprland" "$session"; then
-            sudo sed -i 's/Exec=Hyprland/Exec=start-hyprland/' "$session"
+        if grep -q "Exec=.*start-hyprland" "$session"; then
+            echo "   Already using start-hyprland"
+        elif grep -qE "Exec=(/usr/bin/)?Hyprland" "$session"; then
+            sudo sed -i 's|Exec=.*Hyprland.*|Exec=/usr/bin/start-hyprland|' "$session"
             echo "   Fixed: $session now uses start-hyprland"
         else
-            echo "   Already using start-hyprland"
+            echo "   Unknown Exec line in $session — check manually"
         fi
     fi
 }
