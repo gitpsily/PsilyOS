@@ -8,6 +8,7 @@
     "spacing": 0,
 
     "modules-left": [
+        "custom/keybinds",
         "hyprland/workspaces",
         "hyprland/window"
     ],
@@ -100,5 +101,12 @@
         "format": "⏻",
         "on-click": "wlogout",
         "tooltip": false
+    },
+
+    // ── Keybind Cheat Sheet ────────────────
+    "custom/keybinds": {
+        "format": "󰌌",
+        "on-click": "~/.config/scripts/keybinds.sh",
+        "tooltip-format": "Keybind Cheat Sheet"
     }
 }
