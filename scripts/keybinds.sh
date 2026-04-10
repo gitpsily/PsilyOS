@@ -4,7 +4,8 @@
 # │  Displays all PsilyOS keybinds in Rofi   │
 # └──────────────────────────────────────────┘
 
-keybinds="Super + Return      Terminal (Ghostty)
+keybinds="Super + Return      Terminal
+Super + B             Browser (Librewolf)
 Super + Space       App Launcher (Rofi)
 Super + Q           Kill Window
 Super + F           Fullscreen
