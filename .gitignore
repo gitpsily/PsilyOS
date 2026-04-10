@@ -6,3 +6,4 @@
 .env
 .smbcredentials
 claude-setup-backup.tar.gz
+wlogout/style.css
