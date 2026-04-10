@@ -30,6 +30,13 @@ preflight() {
         exit 1
     fi
 
+    # Enable multilib repo (needed for Steam, 32-bit libs)
+    if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+        echo ":: Enabling multilib repo..."
+        sudo sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
+        sudo pacman -Sy
+    fi
+
     # Need an AUR helper
     if command -v yay &>/dev/null; then
         AUR_HELPER="yay"
