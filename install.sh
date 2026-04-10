@@ -829,9 +829,9 @@ main() {
     setup_nvidia
     setup_cooling
     setup_vm
+    setup_smb
     restore_claude
     setup_libvirt
-    setup_smb
     fix_sddm_session
     enable_services
     download_wallpapers
