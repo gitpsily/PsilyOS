@@ -481,83 +481,152 @@ create_dirs() {
 
 # ── Restore Claude Code Setup ────────────────
 restore_claude() {
-    # Check NAS mount first, then local
+    # Find the most recent Claude backup anywhere on the system
     local backup=""
-    if [ -f "/mnt/storage/claude-setup-backup.tar.gz" ]; then
-        backup="/mnt/storage/claude-setup-backup.tar.gz"
-    elif [ -f "$DOTFILES/claude-setup-backup.tar.gz" ]; then
-        backup="$DOTFILES/claude-setup-backup.tar.gz"
-    fi
+    backup=$(find "$HOME" /mnt /media /tmp "$DOTFILES" \
+        -maxdepth 4 -name "claude-backup-*.tar.gz" -type f 2>/dev/null \
+        | sort -t- -k3,5 -r | head -1)
 
     if [ -z "$backup" ]; then
         echo ""
-        echo ":: No Claude Code backup found — skipping restore."
-        echo "   Place claude-setup-backup.tar.gz on NAS or in PsilyOS dir to restore."
-        return
+        echo ":: No Claude Code backup found."
+        read -rp "   Path to backup tarball (or Enter to skip): " backup
+        [ -z "$backup" ] && return
+        if [ ! -f "$backup" ]; then
+            echo "   File not found: $backup — skipping."
+            return
+        fi
+    else
+        echo ""
+        echo ":: Found Claude backup: $backup"
+        read -rp "   Use this? [Y/n] " confirm
+        if [[ "$confirm" =~ ^[Nn] ]]; then
+            read -rp "   Path to backup tarball (or Enter to skip): " backup
+            [ -z "$backup" ] && return
+            if [ ! -f "$backup" ]; then
+                echo "   File not found: $backup — skipping."
+                return
+            fi
+        fi
     fi
 
     echo ""
     echo ":: Restoring Claude Code setup from $backup..."
 
-    # Extract to a temp dir so we can remap paths
-    local tmpdir=$(mktemp -d)
-    tar xzf "$backup" -C "$tmpdir" 2>/dev/null || true
+    # Detect backup format: new format has relative paths (CLAUDE.md, .claude/, overseer/)
+    # Old format has absolute paths (home/username/.claude/, home/username/overseer/)
+    local has_home_dir=$(tar tzf "$backup" 2>/dev/null | grep "^home/" | head -1)
 
-    # Find the home dir in the backup (e.g., home/claude or home/psily)
-    local backup_home=$(find "$tmpdir/home" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
-    if [ -z "$backup_home" ]; then
-        echo "   Could not find home directory in backup — skipping."
+    if [ -n "$has_home_dir" ]; then
+        # ── Old format: absolute paths under home/username/ ──
+        local tmpdir=$(mktemp -d)
+        tar xzf "$backup" -C "$tmpdir" 2>/dev/null || true
+
+        local backup_home=$(find "$tmpdir/home" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1)
+        if [ -z "$backup_home" ]; then
+            echo "   Could not find home directory in backup — skipping."
+            rm -rf "$tmpdir"
+            return
+        fi
+
+        local backup_user=$(basename "$backup_home")
+
+        [ -d "$backup_home/.claude" ] && cp -a "$backup_home/.claude" "$HOME/"
+        [ -d "$backup_home/overseer" ] && cp -a "$backup_home/overseer" "$HOME/"
+        [ -f "$backup_home/CLAUDE.md" ] && cp -a "$backup_home/CLAUDE.md" "$HOME/"
+        [ -d "$backup_home/.claude-mem" ] && cp -a "$backup_home/.claude-mem" "$HOME/"
+        [ -f "$backup_home/.claude.json" ] && cp -a "$backup_home/.claude.json" "$HOME/"
+        [ -d "$backup_home/alfred-data" ] && cp -a "$backup_home/alfred-data" "$HOME/"
+        mkdir -p "$HOME/.local/share"
+        [ -d "$backup_home/.local/share/overseer-chromadb" ] && cp -a "$backup_home/.local/share/overseer-chromadb" "$HOME/.local/share/"
+        [ -f "$backup_home/.local/share/overseer-fts.db" ] && cp -a "$backup_home/.local/share/overseer-fts.db" "$HOME/.local/share/"
+        [ -f "$backup_home/.local/share/overseer-graph.db" ] && cp -a "$backup_home/.local/share/overseer-graph.db" "$HOME/.local/share/"
+
+        # Remap username if changed
+        local old_project="$HOME/.claude/projects/-home-${backup_user}"
+        local new_project="$HOME/.claude/projects/-home-$(whoami)"
+        if [ -d "$old_project" ] && [ "$old_project" != "$new_project" ]; then
+            mv "$old_project" "$new_project"
+            echo "   Remapped project memory: $backup_user -> $(whoami)"
+        fi
+
+        if [ -f "$HOME/.claude/settings.json" ] && [ "$backup_user" != "$(whoami)" ]; then
+            sed -i "s|/home/${backup_user}|$HOME|g" "$HOME/.claude/settings.json"
+            echo "   Fixed paths in settings.json"
+        fi
+        if [ -f "$HOME/.claude/.mcp.json" ] && [ "$backup_user" != "$(whoami)" ]; then
+            sed -i "s|/home/${backup_user}|$HOME|g" "$HOME/.claude/.mcp.json"
+            echo "   Fixed paths in .mcp.json"
+        fi
+
         rm -rf "$tmpdir"
-        return
+    else
+        # ── New format: relative paths from $HOME ──
+        echo "   Detected new backup format (relative paths)"
+        mkdir -p "$HOME/.local/share"
+        tar xzf "$backup" -C "$HOME" 2>/dev/null
+        echo "   Extracted to $HOME"
     fi
 
-    local backup_user=$(basename "$backup_home")
+    # ── Wire up memory system ────────────────────
 
-    # Copy .claude config
-    if [ -d "$backup_home/.claude" ]; then
-        cp -a "$backup_home/.claude" "$HOME/"
+    # 1. Install uv (needed by session flush hooks)
+    if ! command -v uv &>/dev/null; then
+        echo "   Installing uv..."
+        curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null
     fi
 
-    # Copy overseer
-    if [ -d "$backup_home/overseer" ]; then
-        cp -a "$backup_home/overseer" "$HOME/"
+    # 2. Build overseer venv with chromadb (pip install --user fails on Arch PEP 668)
+    local venv="$HOME/.local/share/overseer-venv"
+    if [ ! -d "$venv" ]; then
+        echo "   Building overseer venv..."
+        python -m venv "$venv"
+        "$venv/bin/pip" install chromadb 2>/dev/null
     fi
 
-    # Copy CLAUDE.md
-    if [ -f "$backup_home/CLAUDE.md" ]; then
-        cp -a "$backup_home/CLAUDE.md" "$HOME/"
+    # 3. Build memory-compiler venv
+    if [ -f "$HOME/.claude/memory-compiler/pyproject.toml" ] && [ ! -d "$HOME/.claude/memory-compiler/.venv" ]; then
+        echo "   Building memory-compiler venv..."
+        (cd "$HOME/.claude/memory-compiler" && "$HOME/.local/bin/uv" sync 2>/dev/null || true)
     fi
 
-    # Copy claude-mem database
-    if [ -d "$backup_home/.claude-mem" ]; then
-        cp -a "$backup_home/.claude-mem" "$HOME/"
+    # 4. Wire .mcp.json — Overseer MCP server (absolute paths, no shell expansion)
+    cat > "$HOME/.claude/.mcp.json" << MCPEOF
+{
+  "mcpServers": {
+    "overseer": {
+      "command": "$HOME/.local/share/overseer-venv/bin/python3",
+      "args": ["$HOME/overseer/mcp-chromadb/server.py"]
+    }
+  }
+}
+MCPEOF
+    echo "   Wired .mcp.json (Overseer MCP server)"
+
+    # 5. Ensure SessionStart hook exists in settings.json
+    if [ -f "$HOME/.claude/settings.json" ]; then
+        if ! grep -q "SessionStart" "$HOME/.claude/settings.json"; then
+            # Insert SessionStart hook before the Stop hook
+            local hook_cmd="cd \$HOME/.claude/memory-compiler && \$HOME/.claude/memory-compiler/.venv/bin/python hooks/session-start.py"
+            python3 -c "
+import json
+with open('$HOME/.claude/settings.json') as f:
+    cfg = json.load(f)
+hooks = cfg.setdefault('hooks', {})
+hooks['SessionStart'] = [{'hooks': [{'type': 'command', 'command': '$hook_cmd', 'timeout': 10}]}]
+with open('$HOME/.claude/settings.json', 'w') as f:
+    json.dump(cfg, f, indent=2)
+" 2>/dev/null && echo "   Added SessionStart hook to settings.json"
+        fi
     fi
 
-    # Copy claude startup config
-    if [ -f "$backup_home/.claude.json" ]; then
-        cp -a "$backup_home/.claude.json" "$HOME/"
+    # 6. Prompt for git identity if not configured
+    if [ -z "$(git config --global user.name)" ]; then
+        echo ""
+        echo "   Git identity not configured."
+        echo "   Run: git config --global user.name 'your-username'"
+        echo "   Run: git config --global user.email 'your-email'"
     fi
-
-    # Copy overseer data
-    mkdir -p "$HOME/.local/share"
-    [ -d "$backup_home/.local/share/overseer-chromadb" ] && cp -a "$backup_home/.local/share/overseer-chromadb" "$HOME/.local/share/"
-    [ -f "$backup_home/.local/share/overseer-graph.db" ] && cp -a "$backup_home/.local/share/overseer-graph.db" "$HOME/.local/share/"
-
-    # Remap project memory folder if username changed
-    local old_project="$HOME/.claude/projects/-home-${backup_user}"
-    local new_project="$HOME/.claude/projects/-home-$(whoami)"
-    if [ -d "$old_project" ] && [ "$old_project" != "$new_project" ]; then
-        mv "$old_project" "$new_project"
-        echo "   Remapped project memory: $backup_user -> $(whoami)"
-    fi
-
-    rm -rf "$tmpdir"
-
-    # Install python deps for overseer/hooks (venv required on Arch)
-    if [ ! -d "$HOME/.local/share/overseer-venv" ]; then
-        python -m venv "$HOME/.local/share/overseer-venv"
-    fi
-    "$HOME/.local/share/overseer-venv/bin/pip" install chromadb 2>/dev/null || true
 
     # Install plugins if claude is available
     if command -v claude &>/dev/null; then
@@ -568,6 +637,14 @@ restore_claude() {
     else
         echo "   Claude Code config restored. Install plugins after installing claude."
     fi
+
+    echo ""
+    echo "   Memory system wired:"
+    echo "     - SessionStart hook (daily log + knowledge index injection)"
+    echo "     - Stop hook (session capture on exit)"
+    echo "     - PreCompact hook (capture before context compression)"
+    echo "     - Overseer MCP server (semantic search across all memories)"
+    echo "   Restart Claude Code to activate."
 }
 
 # ── Fix SDDM Session ─────────────────────────

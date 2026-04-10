@@ -6,6 +6,9 @@
 .env
 .smbcredentials
 claude-setup-backup.tar.gz
+claude-backup-*.tar.gz
+install-guide.html
+zsh/.zshrc.local
 
 # Wallust-generated files (templates are the source of truth)
 hypr/theme.conf

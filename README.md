@@ -304,23 +304,9 @@ The installer creates a credentials file at `~/.smbcredentials` (600 permissions
 
 ## Claude Code Integration
 
-The installer installs Claude Code via npm. If a `claude-setup-backup.tar.gz` is found on the NAS mount or in the PsilyOS directory, the installer restores your full Claude Code setup including settings, skills, plugins, and memory.
+The installer installs Claude Code via npm. If a `claude-backup-*.tar.gz` is found anywhere on the system, the installer offers to restore your Claude Code environment — settings, plugins, memory, session transcripts, skills, and hooks.
 
-To create a backup of your current Claude Code setup:
-
-```bash
-tar czf ~/claude-setup-backup.tar.gz \
-  -C / \
-  home/$USER/.claude/settings.json \
-  home/$USER/.claude/settings.local.json \
-  home/$USER/.claude/skills/ \
-  home/$USER/.claude/plugins/installed_plugins.json \
-  home/$USER/.claude/plugins/known_marketplaces.json \
-  home/$USER/.claude/projects/*/memory/ \
-  home/$USER/CLAUDE.md
-```
-
-Place the tarball on your NAS or in the PsilyOS directory before running the installer.
+Bring your own backup. The restore function handles path remapping if your username changed between machines.
 
 ## License
 

@@ -81,3 +81,13 @@ export XDG_SESSION_DESKTOP=Hyprland
 if command -v starship &>/dev/null; then
     eval "$(starship init zsh)"
 fi
+
+# bun completions
+[ -s "/home/psily/.bun/_bun" ] && source "/home/psily/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Local overrides (not committed to git — personal aliases, claude-backup, etc.)
+[ -f "${0:A:h}/.zshrc.local" ] && source "${0:A:h}/.zshrc.local"
