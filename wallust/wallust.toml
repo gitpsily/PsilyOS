@@ -7,6 +7,8 @@ backend = "kmeans"
 color_space = "labmixed"
 threshold = 20
 palette = "harddark16"
+check_contrast = true
+saturation = 60
 
 [templates]
 hyprland = { template = "hyprland.conf", target = "~/.config/hypr/theme.conf" }
