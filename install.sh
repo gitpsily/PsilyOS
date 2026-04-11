@@ -997,6 +997,9 @@ main() {
         fi
     fi
 
+    # Foot: suppress nerd font monospace warning (idempotent)
+    grep -q 'font-monospace-warn' "$DOTFILES/foot/foot.ini" 2>/dev/null || printf '\n[tweak]\nfont-monospace-warn=no\n' >> "$DOTFILES/foot/foot.ini"
+
     echo ""
     echo "  ╔══════════════════════════════════════╗"
     echo "  ║       PsilyOS installed.             ║"
