@@ -15,6 +15,15 @@ CURRENT="$CACHE/current_wall"
 
 mkdir -p "$CACHE"
 
+wait_for_daemon() {
+    for i in $(seq 1 20); do
+        awww query &>/dev/null && return 0
+        sleep 0.5
+    done
+    echo "wallpaper.sh: awww-daemon not ready after 10s" >&2
+    return 1
+}
+
 set_wallpaper() {
     local wall="$1"
 
@@ -40,7 +49,10 @@ set_wallpaper() {
 
 case "${1:-}" in
     init)
-        if [ -f "$CURRENT" ]; then
+        # Wait for awww-daemon to be ready (race condition on boot)
+        wait_for_daemon || exit 1
+
+        if [ -f "$CURRENT" ] && [ -s "$CURRENT" ]; then
             set_wallpaper "$(cat "$CURRENT")"
         elif [ -d "$WALL_DIR" ]; then
             FIRST=$(find "$WALL_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -1)

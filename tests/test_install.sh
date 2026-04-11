@@ -484,6 +484,13 @@ else
     fail "SSH key should use ed25519"
 fi
 
+# 11.4: wallpaper.sh waits for awww-daemon before setting wallpaper
+if grep -q 'awww query' "$DOTFILES/scripts/wallpaper.sh"; then
+    pass "wallpaper.sh checks awww-daemon readiness before setting wallpaper"
+else
+    fail "wallpaper.sh does not wait for awww-daemon — race condition on boot"
+fi
+
 echo ""
 
 # ═══════════════════════════════════════════
