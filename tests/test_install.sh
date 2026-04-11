@@ -343,6 +343,55 @@ else
     warn "wallust/templates/ is empty or missing"
 fi
 
+# 8.6: wallust template count matches target count in wallust.toml
+template_count=$(ls "$DOTFILES/wallust/templates/" 2>/dev/null | wc -l)
+target_count=$(grep -c 'target = ' "$DOTFILES/wallust/wallust.toml" 2>/dev/null || echo 0)
+if [ "$template_count" -eq "$target_count" ] && [ "$target_count" -gt 0 ]; then
+    pass "wallust template count ($template_count) matches target count ($target_count)"
+else
+    fail "wallust template count ($template_count) does not match target count ($target_count)"
+fi
+
+# 8.7: Every wallust target has a matching placeholder in create_dirs()
+create_dirs_body=$(sed -n '/^create_dirs()/,/^}/p' "$DOTFILES/install.sh")
+missing_placeholders=0
+while IFS= read -r target; do
+    # Strip ~/.config/ prefix to get relative path (e.g., hypr/theme.conf)
+    relpath="${target#\~/.config/}"
+    if ! echo "$create_dirs_body" | grep -q "$relpath"; then
+        echo "   Missing placeholder for: $relpath"
+        missing_placeholders=$((missing_placeholders + 1))
+    fi
+done < <(grep 'target = ' "$DOTFILES/wallust/wallust.toml" | sed 's/.*target = "//;s/".*//')
+if [ "$missing_placeholders" -eq 0 ]; then
+    pass "all wallust targets have placeholders in create_dirs()"
+else
+    fail "$missing_placeholders wallust targets missing from create_dirs() placeholders"
+fi
+
+# 8.8: main() calls wallust run for initial theme generation
+main_body=$(sed -n '/^main()/,/^}/p' "$DOTFILES/install.sh")
+if echo "$main_body" | grep -q 'wallust run'; then
+    pass "main() calls wallust run for initial theme generation"
+else
+    fail "main() does not call wallust run — fresh installs get empty theme files"
+fi
+
+# 8.9: wallust run has error handling (reports failure instead of silent skip)
+if echo "$main_body" | grep -q 'wallust.*||.*echo\|wallust.*failed\|wallust.*not.*found\|wallust.*not.*installed'; then
+    pass "wallust run has error reporting on failure"
+else
+    fail "wallust run silently skips on failure — fresh installs get no theme with no warning"
+fi
+
+# 8.10: download_wallpapers reports how many actually downloaded (vs how many expected)
+dl_func=$(sed -n '/^download_wallpapers()/,/^}/p' "$DOTFILES/install.sh")
+if echo "$dl_func" | grep -q 'FAIL\|fail\|failed\|error\|curl.*||'; then
+    pass "download_wallpapers reports download failures"
+else
+    fail "download_wallpapers silently ignores curl failures — wallust can't run without images"
+fi
+
 echo ""
 
 # ═══════════════════════════════════════════

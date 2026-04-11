@@ -511,6 +511,7 @@ create_dirs() {
     # wallust run will overwrite these with real themed versions.
     local placeholders=(
         "$DOTFILES/hypr/theme.conf"
+        "$DOTFILES/hypr/hyprlock.conf"
         "$DOTFILES/waybar/style.css"
         "$DOTFILES/rofi/theme.rasi"
         "$DOTFILES/mako/config"
@@ -941,12 +942,27 @@ main() {
     download_wallpapers
 
     # Generate initial theme configs from wallust templates
-    if command -v wallust &>/dev/null; then
+    if ! command -v wallust &>/dev/null; then
+        echo ""
+        echo "!! WARNING: wallust is not installed — desktop will have NO theming."
+        echo "   Install it manually:  $AUR_HELPER -S wallust"
+        echo "   Then run:  wallust run ~/Pictures/wallpapers/<any-image>"
+    else
         local first_wall=$(find "$HOME/Pictures/wallpapers" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | head -1)
-        if [ -n "$first_wall" ]; then
+        if [ -z "$first_wall" ]; then
+            echo ""
+            echo "!! WARNING: No wallpapers found in ~/Pictures/wallpapers/"
+            echo "   Desktop will have NO theming until you add a wallpaper and run:"
+            echo "   wallust run ~/Pictures/wallpapers/<any-image>"
+        else
             echo ""
             echo ":: Generating initial theme from $first_wall..."
-            wallust run "$first_wall"
+            if wallust run "$first_wall"; then
+                echo "   Theme generated successfully."
+            else
+                echo "!! WARNING: wallust run failed — desktop will have NO theming."
+                echo "   Try manually:  wallust run $first_wall"
+            fi
         fi
     fi
 
