@@ -523,6 +523,23 @@ create_dirs() {
     for f in "${placeholders[@]}"; do
         [ -f "$f" ] || touch "$f"
     done
+
+    # Foot needs [tweak] even before wallust runs, otherwise it spams a
+    # font-monospace warning on every launch
+    if [ ! -s "$DOTFILES/foot/foot.ini" ]; then
+        cat > "$DOTFILES/foot/foot.ini" << 'FOOTEOF'
+[main]
+font=JetBrainsMono Nerd Font:size=11
+pad=10x8
+
+[cursor]
+style=beam
+
+[tweak]
+font-monospace-warn=no
+FOOTEOF
+    fi
+
     echo "   Wallust placeholders created (overwritten on first theme apply)"
 }
 
@@ -842,14 +859,28 @@ download_wallpapers() {
         "golden-field.jpg"
     )
 
+    local downloaded=0
+    local failed=0
     for i in "${!urls[@]}"; do
-        if [ ! -f "$wall_dir/${names[$i]}" ]; then
-            echo "   Downloading: ${names[$i]}"
-            curl -sL "${urls[$i]}" -o "$wall_dir/${names[$i]}" 2>/dev/null || true
+        local dest="$wall_dir/${names[$i]}"
+        if [ -f "$dest" ] && file "$dest" | grep -q 'image'; then
+            continue
+        fi
+        echo "   Downloading: ${names[$i]}"
+        curl -sL "${urls[$i]}" -o "$dest" 2>/dev/null || true
+        # Validate it's actually an image (not an HTML error page)
+        if [ -f "$dest" ] && ! file "$dest" | grep -q 'image'; then
+            rm -f "$dest"
+            echo "   FAILED: ${names[$i]} (got HTML instead of image)"
+            failed=$((failed + 1))
+        else
+            downloaded=$((downloaded + 1))
         fi
     done
 
-    echo "   Done. $(ls "$wall_dir" | wc -l) wallpapers ready."
+    local total=$(find "$wall_dir" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | wc -l)
+    echo "   Done. $total valid wallpapers."
+    [ "$failed" -gt 0 ] && echo "   $failed downloads failed (CDN returned HTML — try again later)"
 }
 
 # ── Claude Backup Timer ─────────────────────

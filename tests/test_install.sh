@@ -491,6 +491,21 @@ else
     fail "wallpaper.sh does not wait for awww-daemon — race condition on boot"
 fi
 
+# 11.5: download_wallpapers validates that downloads are actual images
+dl_func=$(sed -n '/^download_wallpapers()/,/^}/p' "$DOTFILES/install.sh")
+if echo "$dl_func" | grep -q 'file.*image\|image/jpeg\|JPEG\|validate\|HTML'; then
+    pass "download_wallpapers validates downloaded files are real images"
+else
+    fail "download_wallpapers does not validate downloads — HTML error pages saved as .jpg"
+fi
+
+# 11.6: foot.ini template has font-monospace-warn=no
+if grep -q 'font-monospace-warn=no' "$DOTFILES/wallust/templates/foot.ini"; then
+    pass "foot.ini template suppresses font-monospace warning"
+else
+    fail "foot.ini template missing font-monospace-warn=no (nerd fonts trigger false warning)"
+fi
+
 echo ""
 
 # ═══════════════════════════════════════════

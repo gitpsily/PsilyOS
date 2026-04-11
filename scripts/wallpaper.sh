@@ -49,9 +49,19 @@ set_wallpaper() {
 
 pick_wallpaper() {
     if [ -f "$CURRENT" ] && [ -s "$CURRENT" ]; then
-        cat "$CURRENT"
-    elif [ -d "$WALL_DIR" ]; then
-        find "$WALL_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -1
+        local saved
+        saved=$(cat "$CURRENT")
+        # Verify the saved wallpaper is still a valid image
+        if [ -f "$saved" ] && file "$saved" | grep -q 'image'; then
+            echo "$saved"
+            return
+        fi
+    fi
+    # Find first valid image (skip corrupted downloads)
+    if [ -d "$WALL_DIR" ]; then
+        find "$WALL_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | while read -r f; do
+            file "$f" | grep -q 'image' && echo "$f" && break
+        done
     fi
 }
 
