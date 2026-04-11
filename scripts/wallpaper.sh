@@ -16,11 +16,11 @@ CURRENT="$CACHE/current_wall"
 mkdir -p "$CACHE"
 
 wait_for_daemon() {
-    for i in $(seq 1 20); do
+    # Wait up to 30s — VMs can be slow to initialize
+    for i in $(seq 1 60); do
         awww query &>/dev/null && return 0
         sleep 0.5
     done
-    echo "wallpaper.sh: awww-daemon not ready after 10s" >&2
     return 1
 }
 
@@ -47,17 +47,28 @@ set_wallpaper() {
     hyprctl reload 2>/dev/null
 }
 
+pick_wallpaper() {
+    if [ -f "$CURRENT" ] && [ -s "$CURRENT" ]; then
+        cat "$CURRENT"
+    elif [ -d "$WALL_DIR" ]; then
+        find "$WALL_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -1
+    fi
+}
+
 case "${1:-}" in
     init)
-        # Wait for awww-daemon to be ready (race condition on boot)
-        wait_for_daemon || exit 1
-
-        if [ -f "$CURRENT" ] && [ -s "$CURRENT" ]; then
-            set_wallpaper "$(cat "$CURRENT")"
-        elif [ -d "$WALL_DIR" ]; then
-            FIRST=$(find "$WALL_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.webp" \) | head -1)
-            [ -n "$FIRST" ] && set_wallpaper "$FIRST"
+        WALL=$(pick_wallpaper)
+        if [ -z "$WALL" ]; then
+            notify-send "PsilyOS" "No wallpapers found in $WALL_DIR" 2>/dev/null
+            exit 0
         fi
+
+        if ! wait_for_daemon; then
+            notify-send "PsilyOS" "awww-daemon not ready after 30s — wallpaper skipped" 2>/dev/null
+            exit 0
+        fi
+
+        set_wallpaper "$WALL"
         ;;
     "")
         # Pick wallpaper with rofi
