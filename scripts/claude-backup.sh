@@ -52,9 +52,8 @@ fi
 
 # ── Excludes (rebuilt on restore, platform-specific, or ephemeral) ──
 EXCLUDES=(
-    # Plugin caches (platform-specific node_modules, reinstall via CLI)
+    # Plugin caches (platform-specific, rebuilt on install)
     --exclude='.claude/plugins/cache'
-    --exclude='.claude/plugins/marketplaces'
     --exclude='.claude/plugins/install-counts-cache.json'
 
     # Auth (re-authenticate on new machine)
